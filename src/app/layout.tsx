@@ -33,7 +33,6 @@ export default function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	console.log("rendering");
 	return (
 		<html
 			lang="en"
@@ -48,16 +47,7 @@ export default function RootLayout({
 					enableSystem
 					disableTransitionOnChange
 				>
-					<SidebarProvider>
-						<AppSidebar />
-						<main className="w-full">
-							<SidebarTrigger></SidebarTrigger>
-							<div className="mx-10 pt-5">
-								<Card className="p-5">{children}</Card>
-							</div>
-							<Toaster />
-						</main>
-					</SidebarProvider>
+					{children}
 				</ThemeProvider>
 			</body>
 		</html>
