@@ -1,5 +1,5 @@
-import { GenderEnum } from "../enum/gender.enum";
-import { BaseEntityWithUser } from "./base.entity";
+import { GenderEnum } from "@/model/enum/gender.enum";
+import { BaseEntityWithUser } from "@/model/entity/base.entity";
 
 export interface ContactDetails extends BaseEntityWithUser {
   firstName: string;

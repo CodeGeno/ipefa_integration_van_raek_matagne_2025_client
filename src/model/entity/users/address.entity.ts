@@ -1,4 +1,4 @@
-import { BaseEntityWithUser } from "./base.entity";
+import { BaseEntityWithUser } from "@/model/entity/base.entity";
 
 export interface Address extends BaseEntityWithUser {
   street: string;
