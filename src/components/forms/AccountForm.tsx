@@ -25,27 +25,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useForm } from "react-hook-form";
 import { PersonalInfoForm } from "./PersonalInfoForm";
 import { AddressForm } from "./AddressForm";
+import { format } from "date-fns";
 
 export const AccountForm: React.FC = () => {
   const form = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
-      email: "zoubir@gmail.com",
-      password: "",
-      personalCode: "",
-      role: AccountRoleEnum.STUDENT,
-      contactDetails: {
-        firstName: "",
-        lastName: "",
-        birthDate: new Date(),
+      contact_details: {
+        first_name: "",
+        last_name: "",
+        birth_date: new Date(),
         gender: GenderEnum.MALE,
-        phoneNumber: "",
+        phone_number: "",
       },
       address: {
         street: "123 rue de la paix ",
-        streetNumber: "123",
+        number: "123",
         complement: "app 123",
-        zipCode: "123456",
+        zip_code: "123456",
         city: "Paris",
         state: "Île-de-France",
         country: "France",
@@ -53,9 +50,39 @@ export const AccountForm: React.FC = () => {
     },
   });
 
-  const onSubmit = (data: AccountFormData) => {
-    console.log(data);
-    // TODO: Implémenter la logique de soumission
+  const onSubmit = async (data: AccountFormData) => {
+    try {
+      const formattedData = {
+        ...data,
+        contact_details: {
+          ...data.contact_details,
+          birth_date: format(data.contact_details.birth_date, "yyyy-MM-dd"),
+        },
+      };
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/security/create-student/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formattedData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorMessage = await response.text();
+        throw new Error(
+          `Erreur lors de la soumission des données: ${response.status} ${errorMessage}`
+        );
+      }
+
+      const result = await response.json();
+      console.log(result);
+    } catch (error) {
+      console.error("Erreur:", error);
+    }
   };
 
   return (

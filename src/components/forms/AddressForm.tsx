@@ -33,7 +33,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ control }) => {
         />
         <FormField
           control={control}
-          name="address.streetNumber"
+          name="address.number"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Numéro</FormLabel>
@@ -59,7 +59,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ control }) => {
         />
         <FormField
           control={control}
-          name="address.zipCode"
+          name="address.zip_code"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Code postal</FormLabel>

@@ -40,7 +40,7 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <FormField
           control={control}
-          name="contactDetails.firstName"
+          name="contact_details.first_name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Prénom</FormLabel>
@@ -53,7 +53,7 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
         />
         <FormField
           control={control}
-          name="contactDetails.lastName"
+          name="contact_details.last_name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Nom</FormLabel>
@@ -66,7 +66,7 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
         />
         <FormField
           control={control}
-          name="contactDetails.birthDate"
+          name="contact_details.birth_date"
           render={({ field }) => (
             <FormItem className="flex flex-col justify-between pt-1.5">
               <FormLabel>Date de naissance</FormLabel>
@@ -104,7 +104,7 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
         />
         <FormField
           control={control}
-          name="contactDetails.gender"
+          name="contact_details.gender"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Genre</FormLabel>
@@ -128,7 +128,7 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
         />
         <FormField
           control={control}
-          name="contactDetails.phoneNumber"
+          name="contact_details.phone_number"
           render={({ field }) => (
             <FormItem className="md:col-span-2">
               <FormLabel>Numéro de téléphone</FormLabel>
