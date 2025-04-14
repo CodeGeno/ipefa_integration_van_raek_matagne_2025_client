@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { format } from "date-fns";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +20,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { AccountTypeEnum } from "@/model/type/user.type";
+import { AccountTypeEnum } from "@/model/enum/account-type.enum";
 
 const userFormSchema = z.object({
 	accountId: z.number(),
@@ -41,10 +42,40 @@ export function UserForm() {
 		},
 	});
 
-	function onSubmit(values: UserFormValues) {
-		// Handle form submission
-		console.log(values);
-	}
+	const onSubmit = async (data: UserFormValues) => {
+		try {
+			const formattedData = {
+				...data,
+				contact_details: {
+					...data.contact_details,
+					birth_date: format(
+						data.contact_details.birth_date,
+						"yyyy-MM-dd"
+					),
+				},
+			};
+
+			const response = await fetch("/api/security/create-student", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(formattedData),
+			});
+
+			if (!response.ok) {
+				const errorMessage = await response.text();
+				throw new Error(
+					`Erreur lors de la soumission des données: ${response.status} ${errorMessage}`
+				);
+			}
+
+			const result = await response.json();
+			console.log(result);
+		} catch (error) {
+			console.error("Erreur:", error);
+		}
+	};
 
 	return (
 		<Form {...form}>
