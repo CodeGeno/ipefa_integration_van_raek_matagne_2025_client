@@ -6,16 +6,16 @@ export const addressSchema = z.object({
 	street: z.string().min(1, "La rue est requise"),
 	number: z.string().min(1, "Le numéro de rue est requis"),
 	complement: z.string().optional(),
-	zip_code: z.string().min(1, "Le code postal est requis"),
+	zipCode: z.string().min(1, "Le code postal est requis"),
 	city: z.string().min(1, "La ville est requise"),
 	state: z.string().min(1, "La province est requise"),
 	country: z.string().min(1, "Le pays est requis"),
 });
 
 export const contactDetailsSchema = z.object({
-	first_name: z.string().min(1, "Le prénom est requis"),
-	last_name: z.string().min(1, "Le nom est requis"),
-	birth_date: z
+	firstName: z.string().min(1, "Le prénom est requis"),
+	lastName: z.string().min(1, "Le nom est requis"),
+	birthDate: z
 		.date({
 			required_error: "La date de naissance est requise",
 			invalid_type_error: "Format de date invalide",
@@ -34,11 +34,11 @@ export const contactDetailsSchema = z.object({
 	gender: z.nativeEnum(GenderEnum, {
 		required_error: "Le genre est requis",
 	}),
-	phone_number: z.string().min(1, "Le numéro de téléphone est requis"),
+	phoneNumber: z.string().min(1, "Le numéro de téléphone est requis"),
 });
 
 export const accountSchema = z.object({
-	contact_details: contactDetailsSchema,
+	contactDetails: contactDetailsSchema,
 	address: addressSchema,
 });
 

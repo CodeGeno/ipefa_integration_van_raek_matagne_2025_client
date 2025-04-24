@@ -1,5 +1,3 @@
-import { Input } from "@/components/ui";
-import { Pagination } from "@/components/ui/pagination";
 import {
 	TableBody,
 	TableCell,
@@ -23,16 +21,17 @@ export default async function StudentPageOverview({
 	if (search || page) url += "?";
 	if (search) url += "search=" + search + "&";
 	if (page) url += "page=" + page + "&";
+
 	const response = await fetch(url);
 	const studentsData: PaginationWithSearch<Student> = await response.json();
 	return (
 		<div className="flex flex-col gap-4">
-			<h1>Student Page Overview</h1>
+			<h1>Vue d'ensemble des étudiants</h1>
 			<div className="flex flex-col gap-4">
-				<h2>Student List</h2>
+				<h2>Liste des étudiants</h2>
 				<StudentOverview
 					studentsData={studentsData}
-					searchValue={search ?? ""}
+					searchValue={search}
 				/>
 			</div>
 		</div>
@@ -59,21 +58,21 @@ export const StudentTable: React.FC<{
 				</TableHeader>
 				<TableBody>
 					{studentsData?.data?.map((student) => (
-						<TableRow key={student.account_id}>
-							<TableCell>{student.account_id}</TableCell>
+						<TableRow key={student.accountId}>
+							<TableCell>{student.accountId}</TableCell>
 							<TableCell>
-								{student.contact_details.first_name}
+								{student.contactDetails.firstName}
 							</TableCell>
 							<TableCell>
-								{student.contact_details.last_name}
+								{student.contactDetails.lastName}
 							</TableCell>
-							<TableCell>{student.student_email}</TableCell>
+							<TableCell>{student.email}</TableCell>
 							<TableCell>
-								{student.contact_details.phone_number}
+								{student.contactDetails.phoneNumber}
 							</TableCell>
 							<TableCell>
 								{new Date(
-									student.contact_details.birth_date
+									student.contactDetails.birthDate
 								).toLocaleDateString()}
 							</TableCell>
 						</TableRow>

@@ -7,13 +7,17 @@ import { MdOutlineLightMode } from "react-icons/md";
 import { Toaster } from "@/components/ui/sonner";
 import { MdOutlineDarkMode } from "react-icons/md";
 import { useTheme } from "next-themes";
+import { AccountContext } from "@/app/context";
+import { useContext } from "react";
 
 const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
 	const { setTheme } = useTheme();
+
 	const selectedTheme = localStorage.getItem("theme") ?? "light";
 	return (
 		<SidebarProvider>
 			<AppSidebar />
+
 			<main className="w-full">
 				<div className="flex justify-between pt-5 pr-5">
 					<SidebarTrigger />

@@ -14,8 +14,9 @@ export default function StudentOverview({
 	studentsData: PaginationWithSearch<Student>;
 	searchValue: string;
 }) {
-	const [searchInput, setSearchInput] = useState<string>(searchValue);
+	const [searchInput, setSearchInput] = useState<string>(searchValue ?? "");
 	const router = useRouter();
+	
 	const handleSearch = async () => {
 		await router.push(`/manage/student?search=${searchInput}&page=1`);
 	};

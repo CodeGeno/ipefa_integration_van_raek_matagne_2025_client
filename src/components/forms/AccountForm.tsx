@@ -17,18 +17,18 @@ export const AccountForm: React.FC = () => {
 	const form = useForm<AccountFormData>({
 		resolver: zodResolver(accountSchema),
 		defaultValues: {
-			contact_details: {
-				first_name: "",
-				last_name: "",
-				birth_date: new Date(),
+			contactDetails: {
+				firstName: "",
+				lastName: "",
+				birthDate: new Date(),
 				gender: GenderEnum.MALE,
-				phone_number: "",
+				phoneNumber: "",
 			},
 			address: {
 				street: "123 rue de la paix ",
 				number: "123",
 				complement: "app 123",
-				zip_code: "123456",
+				zipCode: "123456",
 				city: "Paris",
 				state: "Île-de-France",
 				country: "France",
@@ -39,14 +39,26 @@ export const AccountForm: React.FC = () => {
 	const onSubmit = async (data: AccountFormData) => {
 		console.log(data);
 		try {
+			// Convertir les données en snake_case pour le backend
 			const formattedData = {
-				...data,
-				contact_details: {
-					...data.contact_details,
-					birth_date: format(
-						data.contact_details.birth_date,
+				contactDetails: {
+					firstName: data.contactDetails.firstName,
+					lastName: data.contactDetails.lastName,
+					birthDate: format(
+						data.contactDetails.birthDate,
 						"yyyy-MM-dd"
 					),
+					gender: data.contactDetails.gender,
+					phoneNumber: data.contactDetails.phoneNumber,
+				},
+				address: {
+					street: data.address.street,
+					number: data.address.number,
+					complement: data.address.complement,
+					zipCode: data.address.zipCode,
+					city: data.address.city,
+					state: data.address.state,
+					country: data.address.country,
 				},
 			};
 
