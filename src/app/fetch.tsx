@@ -1,10 +1,17 @@
+"use client";
 import { BASE_URL } from "@/lib/url";
 
 // src/app/fetch.ts
 const myFetch: typeof fetch = async (url, options) => {
+	const token = localStorage.getItem("token");
+	const role = localStorage.getItem("role");
 	const response = await fetch(BASE_URL + url, {
 		...options,
 		credentials: "include",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${token}`,
+		},
 	});
 	if (!response.ok) {
 		if (response.status === 401) {

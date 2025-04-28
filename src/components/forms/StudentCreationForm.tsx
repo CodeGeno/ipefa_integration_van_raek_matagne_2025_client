@@ -12,8 +12,13 @@ import { useForm } from "react-hook-form";
 import { PersonalInfoForm } from "./PersonalInfoForm";
 import { AddressForm } from "./AddressForm";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { jsPDF } from "jspdf";
 
-export const AccountForm: React.FC = () => {
+export const StudentCreationForm: React.FC = () => {
+	const { toast } = useToast();
+	const router = useRouter();
 	const form = useForm<AccountFormData>({
 		resolver: zodResolver(accountSchema),
 		defaultValues: {
@@ -37,30 +42,13 @@ export const AccountForm: React.FC = () => {
 	});
 
 	const onSubmit = async (data: AccountFormData) => {
-		console.log(data);
 		try {
-			// Convertir les données en snake_case pour le backend
-			const formattedData = {
-				contactDetails: {
-					firstName: data.contactDetails.firstName,
-					lastName: data.contactDetails.lastName,
-					birthDate: format(
-						data.contactDetails.birthDate,
-						"yyyy-MM-dd"
-					),
-					gender: data.contactDetails.gender,
-					phoneNumber: data.contactDetails.phoneNumber,
-				},
-				address: {
-					street: data.address.street,
-					number: data.address.number,
-					complement: data.address.complement,
-					zipCode: data.address.zipCode,
-					city: data.address.city,
-					state: data.address.state,
-					country: data.address.country,
-				},
-			};
+			let formattedData = { ...data };
+			formattedData.contactDetails.birthDate = format(
+				data.contactDetails.birthDate,
+				"yyyy-MM-dd"
+			) as unknown as Date;
+			console.log(formattedData);
 
 			const response = await fetch(
 				"http://127.0.0.1:8000/api/security/create-student/",
@@ -79,9 +67,37 @@ export const AccountForm: React.FC = () => {
 					`Erreur lors de la soumission des données: ${response.status} ${errorMessage}`
 				);
 			}
+			toast({
+				title: "Compte créé avec succès",
+				description: "Le compte a été créé avec succès",
+			});
 
 			const result = await response.json();
-			console.log("rez", result);
+			const doc = new jsPDF();
+
+			// Exemple de contenu
+			doc.text("Informations du compte", 10, 10);
+			doc.text(
+				`Nom: ${result.data.contactDetails.firstName} ${result.data.contactDetails.lastName}`,
+				10,
+				20
+			);
+			doc.text(`Email: ${result.data.email}`, 10, 30);
+			doc.text(
+				`Téléphone: ${result.data.contactDetails.phoneNumber}`,
+				10,
+				40
+			);
+
+			doc.text(
+				`Adresse: ${result.data.address.street}, ${result.data.address.city}, ${result.data.address.zipCode}, ${result.data.address.country}`,
+				10,
+				50
+			);
+			doc.text(`Mot de passe: ${result.data.password}`, 10, 60);
+			// Sauvegarde du fichier avec le nom basé sur le prénom et le nom
+			const fileName = `${result.data.contactDetails.firstName}${result.data.contactDetails.lastName}.pdf`;
+			doc.output("dataurlnewwindow");
 		} catch (error) {
 			console.error("Erreur:", error);
 		}

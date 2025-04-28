@@ -9,18 +9,7 @@ import { AccountContext } from "@/app/context";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { post } from "@/app/fetch";
-import {
-	getCookie,
-	getCookies,
-	setCookie,
-	deleteCookie,
-	hasCookie,
-	useGetCookies,
-	useSetCookie,
-	useHasCookie,
-	useDeleteCookie,
-	useGetCookie,
-} from "cookies-next/client";
+import { setCookie } from "cookies-next/client";
 export function LoginForm({
 	className,
 	...props
@@ -50,9 +39,8 @@ export function LoginForm({
 					role: data.data.role,
 				});
 
-				// Stocker les informations dans localStorage
-				setCookie("token", data.data.token);
-				setCookie("role", data.data.role);
+				localStorage.setItem("token", data.data.token);
+				localStorage.setItem("role", data.data.role);
 
 				toast({
 					title: "Connexion réussie",

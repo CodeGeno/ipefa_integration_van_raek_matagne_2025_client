@@ -45,7 +45,8 @@ const PaginationItems = ({
 				<PaginationLink
 					isActive={i === currentPage}
 					href={
-						`?page=${i}` + (search != "" ? `&search=${search}` : "")
+						`?page=${i}` +
+						(search != undefined ? `&search=${search}` : "")
 					}
 				>
 					{i}
