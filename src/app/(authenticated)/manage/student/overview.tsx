@@ -16,7 +16,7 @@ export default function StudentOverview({
 }) {
 	const [searchInput, setSearchInput] = useState<string>(searchValue ?? "");
 	const router = useRouter();
-	
+
 	const handleSearch = async () => {
 		await router.push(`/manage/student?search=${searchInput}&page=1`);
 	};

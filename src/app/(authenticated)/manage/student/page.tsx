@@ -10,6 +10,7 @@ import { BASE_URL } from "@/lib/url";
 import { PaginationWithSearch } from "@/model/common/pagination.interface";
 import { Student } from "@/model/entity/users/student.entity";
 import StudentOverview from "./overview";
+import { get, myFetch } from "@/app/fetch";
 
 export default async function StudentPageOverview({
 	searchParams,
@@ -17,12 +18,12 @@ export default async function StudentPageOverview({
 	searchParams: Promise<{ search: string; page: number }>;
 }) {
 	const { search, page } = await searchParams;
-	let url = BASE_URL + "/security/student/list/";
+	let url = "/security/student/list/";
 	if (search || page) url += "?";
 	if (search) url += "search=" + search + "&";
 	if (page) url += "page=" + page + "&";
 
-	const response = await fetch(url);
+	const response = await get(url);
 	const studentsData: PaginationWithSearch<Student> = await response.json();
 	return (
 		<div className="flex flex-col gap-4">
