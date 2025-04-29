@@ -6,75 +6,64 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
 interface AccountData {
-	token: string;
-	role: string;
-	account?: Account;
+  token: string;
+  role: string;
+  account?: Account;
 }
 
 const AppProvider = ({ children }: { children: React.ReactNode }) => {
-	const [accountData, setAccountData] = useState<AccountData>({
-		token: "",
-		role: "",
-		account: undefined,
-	});
-	const { toast } = useToast();
-	const router = useRouter();
+  const [accountData, setAccountData] = useState<AccountData>({
+    token: "",
+    role: "",
+    account: undefined,
+  });
+  const { toast } = useToast();
+  const router = useRouter();
 
-	useEffect(() => {
-		const token = localStorage.getItem("token");
-		const role = localStorage.getItem("role");
-		try {
-			const accountStr = localStorage.getItem("account");
-			const account = accountStr ? JSON.parse(accountStr) : undefined;
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+    try {
+      setAccountData({
+        token: token || "",
+        role: role || "",
+      });
+    } catch (error) {
+      setAccountData({
+        token: "",
+        role: "",
+      });
+    }
+  }, []);
 
-			setAccountData({
-				token: token || "",
-				role: role || "",
-				account,
-			});
-		} catch (error) {
-			console.error("Erreur lors de la récupération du compte:", error);
-			setAccountData({
-				token: token || "",
-				role: role || "",
-			});
-		}
+  const handleUnauthorized = () => {
+    toast({
+      title: "Vous n'êtes pas autorisé à accéder à cette page",
+      description: "Vous allez être redirigé vers la page de connexion",
+      variant: "destructive",
+    });
+    setAccountData({
+      token: "",
+      role: "",
+      account: undefined,
+    });
 
-		toast({
-			title: `token: ${token || ""}`,
-			description: "Vous êtes connecté avec succès",
-		});
-	}, []);
+    // Suppression des données d'authentification du localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
 
-	const handleUnauthorized = () => {
-		toast({
-			title: "Vous n'êtes pas autorisé à accéder à cette page",
-			description: "Vous allez être redirigé vers la page de connexion",
-			variant: "destructive",
-		});
-		setAccountData({
-			token: "",
-			role: "",
-			account: undefined,
-		});
+    setTimeout(() => {
+      router.push("/login");
+    }, 2000);
+  };
 
-		// Suppression des données d'authentification du localStorage
-		localStorage.removeItem("token");
-		localStorage.removeItem("role");
-		localStorage.removeItem("account");
-
-		setTimeout(() => {
-			router.push("/login");
-		}, 2000);
-	};
-
-	return (
-		<AccountContext.Provider
-			value={{ accountData, setAccountData, handleUnauthorized }}
-		>
-			{children}
-		</AccountContext.Provider>
-	);
+  return (
+    <AccountContext.Provider
+      value={{ accountData, setAccountData, handleUnauthorized }}
+    >
+      {children}
+    </AccountContext.Provider>
+  );
 };
 
 export default AppProvider;
