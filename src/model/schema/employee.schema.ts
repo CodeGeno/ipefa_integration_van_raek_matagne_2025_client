@@ -4,7 +4,7 @@ import { addressSchema } from "./address.schema";
 import { contactDetailsSchema } from "./contact-details.schema";
 
 export const employeeSchema = z.object({
-	role: z.enum(Object.values(AccountRoleEnum) as [string, ...string[]]),
+	role: z.enum(Object.keys(AccountRoleEnum) as [string, ...string[]]),
 	contactDetails: contactDetailsSchema,
 	address: addressSchema,
 });

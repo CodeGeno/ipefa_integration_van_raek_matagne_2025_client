@@ -1,12 +1,10 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { accountSchema, AccountFormData } from "@/model/schema/account.schema";
 import { AccountRoleEnum } from "@/model/enum/account-role.enum";
 import { GenderEnum } from "@/model/enum/gender.enum";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useForm } from "react-hook-form";
 import { PersonalInfoForm } from "./PersonalInfoForm";
@@ -23,17 +21,21 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { post } from "@/app/fetch";
+import { toast } from "@/hooks/use-toast";
 
 export const EmployeeCreationForm: React.FC = () => {
+	const [isSubmitting, setIsSubmitting] = useState(false);
+
 	const form = useForm<EmployeeFormData>({
 		resolver: zodResolver(employeeSchema),
 		defaultValues: {
-			role: AccountRoleEnum.EDUCATOR,
+			role: undefined,
 			contactDetails: {
 				firstName: "",
 				lastName: "",
 				birthDate: new Date(),
-				gender: GenderEnum.MALE,
+				gender: undefined,
 				phoneNumber: "",
 			},
 			address: {
@@ -48,54 +50,69 @@ export const EmployeeCreationForm: React.FC = () => {
 		},
 	});
 
+	useEffect(() => {
+		if (Object.keys(form.formState.errors).length > 0) {
+			console.log("Erreurs de validation:", form.formState.errors);
+		}
+	}, [form]);
+
 	const onSubmit = async (data: EmployeeFormData) => {
-		console.log(data);
+		console.log("Form submitted with data:", data);
+		setIsSubmitting(true);
+
 		try {
 			// Convertir les données en snake_case pour le backend
-			const formattedData = {
+			let formattedData = {
+				...data,
 				contactDetails: {
-					firstName: data.contactDetails.firstName,
-					lastName: data.contactDetails.lastName,
+					...data.contactDetails,
 					birthDate: format(
 						data.contactDetails.birthDate,
 						"yyyy-MM-dd"
 					),
-					gender: data.contactDetails.gender,
-					phoneNumber: data.contactDetails.phoneNumber,
-				},
-				address: {
-					street: data.address.street,
-					number: data.address.number,
-					complement: data.address.complement,
-					zipCode: data.address.zipCode,
-					city: data.address.city,
-					state: data.address.state,
-					country: data.address.country,
 				},
 			};
 
-			const response = await fetch(
-				"http://127.0.0.1:8000/api/security/create-student/",
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify(formattedData),
-				}
+			// Utiliser un chemin relatif pour l'API
+			const response = await post(
+				"/security/create-employee/",
+				formattedData
 			);
 
 			if (!response.ok) {
-				const errorMessage = await response.text();
+				const errorData = await response
+					.json()
+					.catch(() => response.text());
 				throw new Error(
-					`Erreur lors de la soumission des données: ${response.status} ${errorMessage}`
+					typeof errorData === "string"
+						? errorData
+						: JSON.stringify(errorData)
 				);
 			}
 
 			const result = await response.json();
-			console.log("rez", result);
+			console.log("Résultat:", result);
+
+			// Afficher un message de succès
+			toast({
+				title: "Succès",
+				description: "Le compte employé a été créé avec succès",
+			});
+
+			// Réinitialiser le formulaire
+			form.reset();
 		} catch (error) {
 			console.error("Erreur:", error);
+			toast({
+				title: "Erreur",
+				description:
+					error instanceof Error
+						? error.message
+						: "Une erreur est survenue lors de la création du compte",
+				variant: "destructive",
+			});
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
@@ -119,36 +136,43 @@ export const EmployeeCreationForm: React.FC = () => {
 										"role",
 										value as AccountRoleEnum
 									)
-								} // Correction ici
-								defaultValue={form.getValues("role")}
+								}
+								defaultValue={AccountRoleEnum.EDUCATOR}
 							>
 								<SelectTrigger>
 									<SelectValue placeholder="Sélectionnez un rôle" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value={AccountRoleEnum.TEACHER}>
-										Enseignant
-									</SelectItem>
-									<SelectItem
-										value={AccountRoleEnum.EDUCATOR}
-									>
-										{" "}
-										{/* Ajoutez d'autres rôles si nécessaire */}
-										Éducateur
-									</SelectItem>
-									{/* Ajoutez d'autres SelectItem ici si nécessaire */}
+									{Object.keys(AccountRoleEnum)
+										.filter((r) => r !== "STUDENT")
+										.map((role) => {
+											const roleKey =
+												role as keyof typeof AccountRoleEnum;
+											return (
+												<SelectItem
+													key={role}
+													value={role}
+												>
+													{AccountRoleEnum[roleKey]}
+												</SelectItem>
+											);
+										})}
 								</SelectContent>
 							</Select>
-							{/* Informations personnelles */}
+
 							<PersonalInfoForm control={form.control} />
-							{/* Adresse */}
+
 							<AddressForm control={form.control} />
 							<div className="flex justify-center">
 								<Button
 									type="submit"
 									size="lg"
+									disabled={isSubmitting}
 								>
-									Créer le compte
+									{form.formState.isValid
+										? "Créer le compte"
+										: "Veuillez remplir tous les champs"}
+									{}
 								</Button>
 							</div>
 						</form>

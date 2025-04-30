@@ -115,7 +115,7 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
 							<FormLabel>Genre</FormLabel>
 							<Select
 								onValueChange={field.onChange}
-								defaultValue={field.value}
+								defaultValue=""
 							>
 								<FormControl>
 									<SelectTrigger>
@@ -123,14 +123,20 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
 									</SelectTrigger>
 								</FormControl>
 								<SelectContent>
-									{Object.values(GenderEnum).map((gender) => (
-										<SelectItem
-											key={gender}
-											value={gender}
-										>
-											{gender}
-										</SelectItem>
-									))}
+									{Object.keys(GenderEnum).map((gender) => {
+										return (
+											<SelectItem
+												key={gender}
+												value={gender}
+											>
+												{
+													GenderEnum[
+														gender as keyof typeof GenderEnum
+													]
+												}
+											</SelectItem>
+										);
+									})}
 								</SelectContent>
 							</Select>
 							<FormMessage />
