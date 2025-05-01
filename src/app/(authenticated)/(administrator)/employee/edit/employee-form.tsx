@@ -4,20 +4,28 @@ import { get } from "@/app/fetch";
 import { Employee } from "@/model/entity/lessons/employee.entity";
 import { useEffect } from "react";
 import { useState } from "react";
-
-const EmployeeForm = ({ id }: { id: string }) => {
-	const [employee, setEmployee] = useState<Employee | null>(null);
+import { EmployeeEditForm } from "@/components/forms/EmployeeEditForm";
+const EmployeeForm = ({
+	id,
+	isEditing,
+}: {
+	id: string;
+	isEditing: boolean;
+}) => {
+	const [employee, setEmployee] = useState<Employee>();
 	const [loading, setLoading] = useState<boolean>(false);
-	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
 		const fetchEmployee = async () => {
 			setLoading(true);
 			try {
-				const response = await get(`/security/employee/${id}`);
-				console.log(response);
+				const response = await get<Employee>(
+					`/security/employee/${id}`
+				);
+
+				setEmployee(response.data);
 			} catch (error) {
-				setError(error as string);
+				console.log(error);
 			} finally {
 				setLoading(false);
 			}
@@ -25,7 +33,24 @@ const EmployeeForm = ({ id }: { id: string }) => {
 		fetchEmployee();
 	}, [id]);
 
-	return <div>EmployeeForm</div>;
+	return (
+		<div>
+			{loading ? (
+				<div>Loading...</div>
+			) : (
+				<>
+					{employee ? (
+						<EmployeeEditForm
+							employee={employee}
+							isEditing
+						/>
+					) : (
+						<div>Employee not found</div>
+					)}
+				</>
+			)}
+		</div>
+	);
 };
 
 export default EmployeeForm;

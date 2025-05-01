@@ -30,41 +30,47 @@ import DatePicker from "../ui/date-picker";
 
 interface PersonalInfoFormProps {
 	control: Control<any>;
+	isEditing: boolean;
 }
 
 export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
 	control,
+	isEditing = false,
 }) => {
 	return (
 		<div className="space-y-4">
 			<h3 className="text-lg font-semibold">Informations personnelles</h3>
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-				<FormField
-					control={control}
-					name="contactDetails.firstName"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Prénom</FormLabel>
-							<FormControl>
-								<Input {...field} />
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-				<FormField
-					control={control}
-					name="contactDetails.lastName"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Nom</FormLabel>
-							<FormControl>
-								<Input {...field} />
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
+				{!isEditing && (
+					<>
+						<FormField
+							control={control}
+							name="contactDetails.firstName"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Prénom</FormLabel>
+									<FormControl>
+										<Input {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={control}
+							name="contactDetails.lastName"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Nom</FormLabel>
+									<FormControl>
+										<Input {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</>
+				)}
 				<FormField
 					control={control}
 					name="contactDetails.birthDate"
@@ -115,7 +121,7 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
 							<FormLabel>Genre</FormLabel>
 							<Select
 								onValueChange={field.onChange}
-								defaultValue=""
+								defaultValue={field.value}
 							>
 								<FormControl>
 									<SelectTrigger>
