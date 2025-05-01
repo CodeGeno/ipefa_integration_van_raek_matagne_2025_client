@@ -130,9 +130,7 @@ export default async function UEDetailPage({params}: { params: { id: string } })
                                         <tr key={student.accountId || student.accountId} className="border-t">
                                             <td className="px-4 py-2">{student.accountId || student.accountId}</td>
                                             <td className="px-4 py-2">
-                                                {student.contactDetails ?
-                                                    `${student.contactDetails.firstName} ${student.contactDetails.lastName}` :
-                                                    `${student.contactDetails.firstname || ''} ${student.contactDetails.lastname || ''}`}
+                                                `${student.contactDetails.firstName} ${student.contactDetails.lastName}`
                                             </td>
                                         </tr>
                                     ))}
