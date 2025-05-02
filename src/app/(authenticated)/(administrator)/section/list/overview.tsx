@@ -8,33 +8,34 @@ import PaginationComponent from "@/components/pagination-component";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPaginated } from "@/app/fetch";
-import { EmployeeTable } from "./table";
+import { SectionTable } from "./table";
 import { ApiPaginatedResponse } from "@/model/api/api.response";
+import { Section } from "@/model/entity/ue/section.entity";
 
-export default function EmployeeOverview({
+export default function SectionOverview({
   url,
   searchValue,
 }: {
   url: string;
   searchValue: string;
 }) {
-  const [employeesData, setEmployeesData] =
-    useState<ApiPaginatedResponse<Employee[]>>();
+  const [sectionsData, setSectionsData] =
+    useState<ApiPaginatedResponse<Section[]>>();
   useEffect(() => {
-    getEmployees();
+    getSections();
   }, [url]);
-  const getEmployees = async () => {
-    const response = await getPaginated<Employee[]>(url);
+  const getSections = async () => {
+    const response = await getPaginated<Section[]>(url);
     console.log(response);
     if (response.success) {
-      setEmployeesData(response);
+      setSectionsData(response);
     }
   };
   const [searchInput, setSearchInput] = useState<string>(searchValue ?? "");
   const router = useRouter();
 
   const handleSearch = async () => {
-    await router.push(`/employee/list?search=${searchInput}&page=1`);
+    await router.push(`/section/list?search=${searchInput}&page=1`);
   };
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") await handleSearch();
@@ -50,12 +51,12 @@ export default function EmployeeOverview({
         />
         <Button onClick={handleSearch}>Rechercher</Button>
       </div>
-      {employeesData && (
+      {sectionsData && (
         <>
-          <EmployeeTable employeesData={employeesData.data} />
+          <SectionTable sectionsData={sectionsData.data} />
           <PaginationComponent
-            totalPages={employeesData.total_pages}
-            currentPage={employeesData.current_page}
+            totalPages={sectionsData.total_pages}
+            currentPage={sectionsData.current_page}
             search={searchValue}
           />
         </>
