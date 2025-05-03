@@ -24,15 +24,22 @@ import {
 } from "@/components/ui/select";
 import { SectionTypeEnum } from "@/model/enum/section-type.enum";
 import { SectionCategoryEnum } from "@/model/enum/section-category.enum";
-import { post } from "@/app/fetch";
+import { patch } from "@/app/fetch";
 import { sectionSchema, SectionFormData } from "@/model/schema/section.schema";
 import { Textarea } from "@/components/ui/textarea";
-const SectionCreatePage = () => {
+import { Section } from "@/model/entity/ue/section.entity";
+import { useState, useEffect } from "react";
+import { get } from "@/app/fetch";
+
+export const SectionEditForm = ({ id }: { id: string }) => {
 	const router = useRouter();
+	const [section, setSection] = useState<Section | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
 
 	// Initialisation du formulaire avec React Hook Form
 	const form = useForm<SectionFormData>({
 		resolver: zodResolver(sectionSchema),
+		// On initialise avec des valeurs vides
 		defaultValues: {
 			name: "",
 			sectionType: undefined,
@@ -41,32 +48,105 @@ const SectionCreatePage = () => {
 		},
 	});
 
+	useEffect(() => {
+		fetchSection();
+	}, [id]);
+
+	const fetchSection = async () => {
+		try {
+			setIsLoading(true);
+			const response = await get<Section>(`/section/${id}`);
+			const sectionData = response.data;
+
+			if (sectionData) {
+				setSection(sectionData);
+
+				// Conversion des enums en chaînes pour le formulaire
+				const sectionTypeKey = Object.keys(SectionTypeEnum).find(
+					(key) =>
+						SectionTypeEnum[key as keyof typeof SectionTypeEnum] ===
+						sectionData.sectionType
+				);
+
+				const sectionCategoryKey = Object.keys(
+					SectionCategoryEnum
+				).find(
+					(key) =>
+						SectionCategoryEnum[
+							key as keyof typeof SectionCategoryEnum
+						] === sectionData.sectionCategory
+				);
+
+				// Mise à jour des valeurs du formulaire après chargement des données
+				form.reset({
+					name: sectionData.name || "",
+					sectionType: sectionTypeKey,
+					sectionCategory: sectionCategoryKey,
+					description: sectionData.description || "",
+				});
+			} else {
+				toast({
+					title: "Erreur",
+					description: "Données de section invalides",
+					variant: "destructive",
+				});
+			}
+		} catch (error) {
+			console.error("Erreur de chargement:", error);
+			toast({
+				title: "Erreur",
+				description:
+					"Impossible de récupérer les données de la section",
+				variant: "destructive",
+			});
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
 	// Fonction de soumission du formulaire
 	const onSubmit = async (values: SectionFormData) => {
+		if (!section) return;
+
 		try {
-			console.log(values);
-			await post("/section/create/", values);
+			await patch(`/section/update/${section.sectionId}/`, values);
 			toast({
-				title: "Section créée",
-				description: "La section a été créée avec succès",
+				title: "Section modifiée",
+				description: "La section a été modifiée avec succès",
 			});
 			setTimeout(() => {
 				router.push("/section/list");
 			}, 1500);
 		} catch (error) {
+			console.error("Erreur de soumission:", error);
 			toast({
 				title: "Erreur",
 				description:
-					"Une erreur est survenue lors de la création de la section",
+					"Une erreur est survenue lors de la modification de la section",
 				variant: "destructive",
 			});
 		}
 	};
 
+	if (isLoading) {
+		return (
+			<>
+				<CardHeader>
+					<CardTitle>Modification de la section</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<div className="flex justify-center items-center py-8">
+						Chargement des données...
+					</div>
+				</CardContent>
+			</>
+		);
+	}
+
 	return (
 		<>
 			<CardHeader>
-				<CardTitle>Création d'une nouvelle section</CardTitle>
+				<CardTitle>Modification de la section</CardTitle>
 			</CardHeader>
 			<CardContent>
 				<Form {...form}>
@@ -98,7 +178,7 @@ const SectionCreatePage = () => {
 									<FormLabel>Type de cursus</FormLabel>
 									<Select
 										onValueChange={field.onChange}
-										defaultValue={field.value}
+										value={field.value}
 									>
 										<FormControl>
 											<SelectTrigger>
@@ -134,7 +214,7 @@ const SectionCreatePage = () => {
 									<FormLabel>Catégorie</FormLabel>
 									<Select
 										onValueChange={field.onChange}
-										defaultValue={field.value}
+										value={field.value}
 									>
 										<FormControl>
 											<SelectTrigger>
@@ -171,8 +251,7 @@ const SectionCreatePage = () => {
 									<FormControl>
 										<Textarea
 											placeholder="Ex: Cette section est destinée aux étudiants qui souhaitent devenir informaticiens"
-											value={field.value}
-											onChange={field.onChange}
+											{...field}
 										/>
 									</FormControl>
 									<FormMessage />
@@ -184,7 +263,7 @@ const SectionCreatePage = () => {
 								className="w-full"
 								type="submit"
 							>
-								Enregistrer la Section
+								Enregistrer les modifications
 							</Button>
 						</div>
 					</form>
@@ -193,5 +272,3 @@ const SectionCreatePage = () => {
 		</>
 	);
 };
-
-export default SectionCreatePage;

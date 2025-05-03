@@ -139,7 +139,10 @@ export const EmployeeEditForm: React.FC<{
 								</SelectContent>
 							</Select>
 
-							<PersonalInfoForm control={form.control} />
+							<PersonalInfoForm
+								control={form.control}
+								isEditing
+							/>
 
 							<AddressForm control={form.control} />
 							<div className="flex justify-center">

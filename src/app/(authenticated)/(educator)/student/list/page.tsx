@@ -1,4 +1,5 @@
 import StudentOverview from "./overview";
+import { createUrlWithParams } from "@/utils/url";
 
 export default async function StudentPageOverview({
 	searchParams,
@@ -6,10 +7,10 @@ export default async function StudentPageOverview({
 	searchParams: Promise<{ search: string; page: number }>;
 }) {
 	const { search, page } = await searchParams;
-	let url = "/security/student/list/";
-	if (search || page) url += "?";
-	if (search) url += "search=" + search + "&";
-	if (page) url += "page=" + page;
+	const url = createUrlWithParams("/security/student/list/", {
+		search,
+		page,
+	});
 
 	return (
 		<div className="flex flex-col gap-4">
