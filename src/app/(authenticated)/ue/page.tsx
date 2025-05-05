@@ -5,17 +5,7 @@ import {Section} from "@/model/entity/ue/section.entity";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Collapsible, CollapsibleContent, CollapsibleTrigger} from '@/components/ui/collapsible';
 import {ChevronDown} from "lucide-react";
-
-interface UE {
-    ueId: number;
-    name: string;
-    description: string;
-    isActive: boolean;
-    section: number;
-    prerequisites: number[];
-    cycle: number;
-    periods: number;
-}
+import {UE} from "@/model/entity/ue/ue.entity";
 
 interface ApiSectionItem {
     id: number;
@@ -179,7 +169,7 @@ export default async function UEListPage() {
                                                                                                 </Button>
                                                                                             </Link>
                                                                                             <Link
-                                                                                                href={`/ue/edit/${ue.ueId}`}>
+                                                                                                href={`/ue/update/${ue.ueId}`}>
                                                                                                 <Button
                                                                                                     variant="outline"
                                                                                                     size="sm">

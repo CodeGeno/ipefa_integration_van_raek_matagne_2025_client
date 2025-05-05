@@ -6,6 +6,8 @@ import {useState, useEffect} from "react";
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {z} from "zod";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 interface Section {
     sectionId: number;
@@ -124,8 +126,14 @@ const UECreatePage = () => {
 
     return (
         <>
-            <CardHeader>
-                <CardTitle>Créer une nouvelle UE</CardTitle>
+            <CardHeader className="flex flex-col sm:flex-row justify-between">
+                <div class="flex flex-col gap-4">
+                    <Link href="/ue" className="flex items-center text-sm text-gray-500 mb-2">
+                        <ArrowLeft className="h-4 w-4 mr-1" />
+                        Retour à la liste des UEs
+                    </Link>
+                    <CardTitle>Créer une nouvelle UE</CardTitle>
+                </div>
             </CardHeader>
             <CardContent>
                 <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>

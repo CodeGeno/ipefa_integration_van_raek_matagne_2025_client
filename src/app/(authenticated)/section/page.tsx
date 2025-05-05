@@ -49,14 +49,14 @@ const SectionPage = () => {
 				<div className="flex flex-col md:flex-row gap-4">
 					<div className="flex flex-col flex-1 gap-2">
 						<Label>Nom de la section</Label>
-						<Input placeholder="ex: Bachelier en Informatique" />
+						<Input placeholder="ex: Bachelier en Informatique"/>
 					</div>
 
 					<div className="flex flex-col flex-1 gap-2">
 						<Label>Catégorie</Label>
 						<Select>
 							<SelectTrigger>
-								<SelectValue placeholder="Sélectionnez une catégorie" />
+								<SelectValue placeholder="Sélectionnez une catégorie"/>
 							</SelectTrigger>
 							<SelectContent>
 								{Object.values(categoriesEtudes).map(
@@ -77,7 +77,7 @@ const SectionPage = () => {
 						<Label>Type de cursus</Label>
 						<Select>
 							<SelectTrigger>
-								<SelectValue placeholder="Sélectionnez un type de cursus" />
+								<SelectValue placeholder="Sélectionnez un type de cursus"/>
 							</SelectTrigger>
 							<SelectContent>
 								{Object.values(SectionType).map((value) => (
@@ -115,6 +115,11 @@ const SectionPage = () => {
 							</div>
 
 							<div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+								<Link href={`/ue?sectionId=${section.id}`} className="w-full md:w-auto">
+									<Button className="w-full md:w-auto" variant="outline">
+										Détails
+									</Button>
+								</Link>
 								<Button
 									variant="secondary"
 									className="w-full md:w-auto"

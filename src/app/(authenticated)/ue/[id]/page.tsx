@@ -16,9 +16,9 @@ interface ParsedUE {
     lessons: Lesson[];
 }
 
-async function getAcademicUE(id: string): Promise<ParsedUE | null> {
+async function getUE(id: string): Promise<ParsedUE | null> {
     try {
-        const response = await fetch(`http://localhost:8000/api/ue-management/academic-ues/${id}/`, {
+        const response = await fetch(`http://localhost:8000/api/ue/${id}/`, {
             cache: "no-store"
         });
 
@@ -47,7 +47,7 @@ async function getAcademicUE(id: string): Promise<ParsedUE | null> {
 }
 
 export default async function UEDetailPage({params}: { params: { id: string } }) {
-    const ue = await getAcademicUE(params.id);
+    const ue = await getUE(params.id);
 
     if (!ue) {
         return (
@@ -56,7 +56,7 @@ export default async function UEDetailPage({params}: { params: { id: string } })
                     <CardContent className="pt-6">
                         <div className="text-center">
                             <p>UE non trouvée</p>
-                            <Link href="/ue/list">
+                            <Link href="/ue">
                                 <Button className="mt-4">Retour à la liste</Button>
                             </Link>
                         </div>
@@ -70,7 +70,7 @@ export default async function UEDetailPage({params}: { params: { id: string } })
         <div className="container mx-auto p-4">
             <Card>
                 <CardHeader>
-                    <CardTitle>Détails de l&apos;UE {ue.ue.name}</CardTitle>
+                    <CardTitle>Détails de l&apos;UE {ue.ue}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -143,12 +143,12 @@ export default async function UEDetailPage({params}: { params: { id: string } })
                     </div>
 
                     <div className="mt-6 flex justify-end space-x-4">
-                        <Link href={`/ue/edit/${ue.id}`}>
+                        <Link href={`/ue/update/${ue.id}`}>
                             <Button variant="outline">
                                 Modifier
                             </Button>
                         </Link>
-                        <Link href="/ue/list">
+                        <Link href="/ue">
                             <Button variant="outline">
                                 Retour à la liste
                             </Button>

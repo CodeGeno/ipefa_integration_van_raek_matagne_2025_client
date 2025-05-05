@@ -8,21 +8,11 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {z} from "zod";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Section {
     sectionId: number;
     name: string;
-}
-
-interface UE {
-    ueId: number;
-    name: string;
-    description: string;
-    isActive: boolean;
-    section: number;
-    prerequisites: number[];
-    cycle: number;
-    periods: number;
 }
 
 // Define schema with Zod
@@ -160,7 +150,7 @@ const UEEditPage = () => {
         return (
             <>
                 <CardHeader>
-                    <CardTitle>Modification de l'UE</CardTitle>
+                    <CardTitle>Modification de l UE</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="flex justify-center items-center h-40">
@@ -190,13 +180,13 @@ const UEEditPage = () => {
     return (
         <>
             <CardHeader>
-                <CardTitle>Modifier l'UE</CardTitle>
+                <CardTitle>Modifier l UE</CardTitle>
             </CardHeader>
             <CardContent>
                 <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
                     {/* Libellé */}
                     <div>
-                        <Label htmlFor="name">Libellé de l'UE</Label>
+                        <Label htmlFor="name">Libellé de l UE</Label>
                         <Input
                             id="name"
                             placeholder="Ex: Projet SGBD"
