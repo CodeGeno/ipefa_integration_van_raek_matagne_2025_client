@@ -40,6 +40,10 @@ const data = {
 					url: "/ue", // Remplacez par le chemin réel
 				},
 				{
+					title: "Academics UEs",
+					url: "/academics-ue", // Remplacez par le chemin réel
+				},
+				{
 					title: "Section",
 					url: "/section", // Remplacez par le chemin réel
 				},
