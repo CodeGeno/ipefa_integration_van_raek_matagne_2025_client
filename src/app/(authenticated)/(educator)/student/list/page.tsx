@@ -1,5 +1,7 @@
 import StudentOverview from "./overview";
 import { createUrlWithParams } from "@/utils/url";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function StudentPageOverview({
 	searchParams,
@@ -13,10 +15,14 @@ export default async function StudentPageOverview({
 	});
 
 	return (
-		<div className="flex flex-col gap-4">
-			<h1>Vue d'ensemble des étudiants</h1>
+		<div className="flex flex-col gap-4 p-4">
+			<div className="flex justify-between align-center text-center">
+				<h1 className="text-2xl font-bold">Liste des élèves</h1>
+				<Link href="/student/create">
+					<Button>Ajouter</Button>
+				</Link>
+			</div>
 			<div className="flex flex-col gap-4">
-				<h2>Liste des étudiants</h2>
 				<StudentOverview
 					url={url}
 					searchValue={search}

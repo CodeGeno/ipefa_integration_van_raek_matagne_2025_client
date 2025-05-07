@@ -1,5 +1,7 @@
+import { Button, Card } from "@/components/ui";
 import EmployeeOverview from "./overview";
 import { createUrlWithParams } from "@/utils/url";
+import Link from "next/link";
 
 export default async function EmployeePageOverview({
 	searchParams,
@@ -13,15 +15,27 @@ export default async function EmployeePageOverview({
 	});
 
 	return (
-		<div className="flex flex-col gap-4">
-			<h1>Vue d'ensemble des employés</h1>
+		<Card className="p-5 min-h-[600px] min-w-[60%] flex flex-col justify-between">
 			<div className="flex flex-col gap-4">
-				<h2>Liste des employés</h2>
-				<EmployeeOverview
-					url={url}
-					searchValue={search}
-				/>
+				<div className="flex justify-between align-center text-center">
+					<div>
+						<h1 className="text-2xl font-bold">
+							Liste des employés
+						</h1>
+					</div>
+					<Link href="/employee/create">
+						<Button>Ajouter</Button>
+					</Link>
+				</div>
+
+				<div className="flex flex-col gap-4">
+					<div className="flex justify-between items-center"></div>
+					<EmployeeOverview
+						url={url}
+						searchValue={search}
+					/>
+				</div>
 			</div>
-		</div>
+		</Card>
 	);
 }

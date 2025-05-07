@@ -71,84 +71,92 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
 						/>
 					</>
 				)}
-				<FormField
-					control={control}
-					name="contactDetails.birthDate"
-					render={({ field }) => (
-						<FormItem className="flex flex-col justify-between pt-1.5">
-							<FormLabel>Date de naissance</FormLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-									<FormControl>
-										<Button
-											variant="outline"
-											className="w-full pl-3 text-left font-normal"
-										>
-											{field.value ? (
-												format(field.value, "PPP", {
-													locale: fr,
-												})
-											) : (
-												<span>Choisir une date</span>
-											)}
-											<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-										</Button>
-									</FormControl>
-								</PopoverTrigger>
-								<PopoverContent
-									className="w-auto p-0"
-									align="start"
-								>
-									<DatePicker
-										selected={field.value}
-										onSelect={field.onChange}
-										disabled={(date) =>
-											date > new Date() ||
-											date < new Date("1900-01-01")
-										}
-									/>
-								</PopoverContent>
-							</Popover>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-				<FormField
-					control={control}
-					name="contactDetails.gender"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Genre</FormLabel>
-							<Select
-								onValueChange={field.onChange}
-								defaultValue={field.value}
-							>
-								<FormControl>
-									<SelectTrigger>
-										<SelectValue placeholder="Sélectionnez un genre" />
-									</SelectTrigger>
-								</FormControl>
-								<SelectContent>
-									{Object.keys(GenderEnum).map((gender) => {
-										return (
-											<SelectItem
-												key={gender}
-												value={gender}
+				{!isEditing && (
+					<FormField
+						control={control}
+						name="contactDetails.birthDate"
+						render={({ field }) => (
+							<FormItem className="flex flex-col justify-between pt-1.5">
+								<FormLabel>Date de naissance</FormLabel>
+								<Popover>
+									<PopoverTrigger asChild>
+										<FormControl>
+											<Button
+												variant="outline"
+												className="w-full pl-3 text-left font-normal"
 											>
-												{
-													GenderEnum[
-														gender as keyof typeof GenderEnum
-													]
-												}
-											</SelectItem>
-										);
-									})}
-								</SelectContent>
-							</Select>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
+												{field.value ? (
+													format(field.value, "PPP", {
+														locale: fr,
+													})
+												) : (
+													<span>
+														Choisir une date
+													</span>
+												)}
+												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+											</Button>
+										</FormControl>
+									</PopoverTrigger>
+									<PopoverContent
+										className="w-auto p-0"
+										align="start"
+									>
+										<DatePicker
+											selected={field.value}
+											onSelect={field.onChange}
+											disabled={(date) =>
+												date > new Date() ||
+												date < new Date("1900-01-01")
+											}
+										/>
+									</PopoverContent>
+								</Popover>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				)}
+				{!isEditing && (
+					<FormField
+						control={control}
+						name="contactDetails.gender"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Genre</FormLabel>
+								<Select
+									onValueChange={field.onChange}
+									defaultValue={field.value}
+								>
+									<FormControl>
+										<SelectTrigger>
+											<SelectValue placeholder="Sélectionnez un genre" />
+										</SelectTrigger>
+									</FormControl>
+									<SelectContent>
+										{Object.keys(GenderEnum).map(
+											(gender) => {
+												return (
+													<SelectItem
+														key={gender}
+														value={gender}
+													>
+														{
+															GenderEnum[
+																gender as keyof typeof GenderEnum
+															]
+														}
+													</SelectItem>
+												);
+											}
+										)}
+									</SelectContent>
+								</Select>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				)}
 				<FormField
 					control={control}
 					name="contactDetails.phoneNumber"

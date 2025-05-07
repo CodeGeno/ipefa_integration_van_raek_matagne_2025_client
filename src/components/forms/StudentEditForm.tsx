@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { accountSchema, AccountFormData } from "@/model/schema/account.schema";
 import { AccountRoleEnum } from "@/model/enum/account-role.enum";
@@ -14,11 +14,25 @@ import { AddressForm } from "./AddressForm";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { jsPDF } from "jspdf";
+import { get, post } from "@/app/fetch";
+import { Student } from "@/model/entity/users/student.entity";
 
-export const StudentCreationForm: React.FC = () => {
+export const StudentEditForm: React.FC<{ id: string }> = ({ id }) => {
 	const { toast } = useToast();
 	const router = useRouter();
+	const [student, setStudent] = useState<Student>();
+	useEffect(() => {
+		fetchStudent();
+	}, [id]);
+	const fetchStudent = async () => {
+		const response = await get<Student>(`/security/student/${id}`);
+		if (response.data) {
+			const birthDate = new Date(response.data.contactDetails.birthDate);
+			response.data.contactDetails.birthDate = birthDate;
+		}
+		setStudent(response.data);
+		console.log(response.data);
+	};
 	const form = useForm<AccountFormData>({
 		resolver: zodResolver(accountSchema),
 		defaultValues: {
@@ -41,63 +55,43 @@ export const StudentCreationForm: React.FC = () => {
 		},
 	});
 
+	useEffect(() => {
+		if (student) {
+			form.reset({
+				...student,
+			});
+		}
+	}, [student, form]);
+
 	const onSubmit = async (data: AccountFormData) => {
+		console.log(data);
 		try {
-			let formattedData = { ...data };
+			let formattedData = { ...data, id: id };
 			formattedData.contactDetails.birthDate = format(
 				data.contactDetails.birthDate,
 				"yyyy-MM-dd"
 			) as unknown as Date;
 			console.log(formattedData);
 
-			const response = await fetch(
-				"http://127.0.0.1:8000/api/security/create-student/",
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify(formattedData),
-				}
+			const response = await post(
+				`/security/student/edit/${id}`,
+				formattedData
 			);
 
-			if (!response.ok) {
-				const errorMessage = await response.text();
-				throw new Error(
-					`Erreur lors de la soumission des données: ${response.status} ${errorMessage}`
-				);
+			if (response.success !== true) {
+				toast({
+					title: "Erreur lors de la modification du compte",
+					description: response.message,
+				});
+				return;
 			}
 			toast({
-				title: "Compte créé avec succès",
-				description: "Le compte a été créé avec succès",
+				title: "Compte modifié avec succès",
+				description: "Le compte a été modifié avec succès",
 			});
-
-			const result = await response.json();
-			const doc = new jsPDF();
-
-			// Exemple de contenu
-			doc.text("Informations du compte", 10, 10);
-			doc.text(
-				`Nom: ${result.data.contactDetails.firstName} ${result.data.contactDetails.lastName}`,
-				10,
-				20
-			);
-			doc.text(`Email: ${result.data.email}`, 10, 30);
-			doc.text(
-				`Téléphone: ${result.data.contactDetails.phoneNumber}`,
-				10,
-				40
-			);
-
-			doc.text(
-				`Adresse: ${result.data.address.street}, ${result.data.address.city}, ${result.data.address.zipCode}, ${result.data.address.country}`,
-				10,
-				50
-			);
-			doc.text(`Mot de passe: ${result.data.password}`, 10, 60);
-			// Sauvegarde du fichier avec le nom basé sur le prénom et le nom
-			const fileName = `${result.data.contactDetails.firstName}${result.data.contactDetails.lastName}.pdf`;
-			doc.output("dataurlnewwindow");
+			setTimeout(() => {
+				router.push("/student/list");
+			}, 1500);
 		} catch (error) {
 			console.error("Erreur:", error);
 		}
@@ -107,7 +101,7 @@ export const StudentCreationForm: React.FC = () => {
 		<div className="container w-full py-8">
 			<CardHeader>
 				<CardTitle className="text-center text-2xl">
-					Création d'un compte étudiant
+					Modification d'un compte étudiant
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
@@ -119,7 +113,7 @@ export const StudentCreationForm: React.FC = () => {
 						{/* Informations personnelles */}
 						<PersonalInfoForm
 							control={form.control}
-							isEditing={false}
+							isEditing
 						/>
 						{/* Adresse */}
 						<AddressForm control={form.control} />
@@ -128,7 +122,15 @@ export const StudentCreationForm: React.FC = () => {
 								type="submit"
 								size="lg"
 							>
-								Créer le compte
+								Modifier le compte
+							</Button>
+							<Button
+								type="button"
+								onClick={() => {
+									console.log(form.formState.errors);
+								}}
+							>
+								Vérifier erreurs
 							</Button>
 						</div>
 					</form>

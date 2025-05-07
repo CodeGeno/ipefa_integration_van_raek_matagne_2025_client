@@ -9,13 +9,16 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { EditIcon } from "lucide-react";
 
 export const StudentTable: React.FC<{
 	studentsData: Student[];
 }> = ({ studentsData }) => {
+	const router = useRouter();
 	return (
 		<div className="container mx-auto">
-			<h1 className="text-2xl font-bold mb-4">Liste des élèves</h1>
 			<Table>
 				<TableHeader>
 					<TableRow>
@@ -24,7 +27,7 @@ export const StudentTable: React.FC<{
 						<TableHead>Nom</TableHead>
 						<TableHead>Email</TableHead>
 						<TableHead>Téléphone</TableHead>
-						<TableHead>Date de naissance</TableHead>
+						<TableHead>Actions</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
@@ -41,10 +44,17 @@ export const StudentTable: React.FC<{
 							<TableCell>
 								{student.contactDetails.phoneNumber}
 							</TableCell>
+
 							<TableCell>
-								{new Date(
-									student.contactDetails.birthDate
-								).toLocaleDateString()}
+								<Button
+									onClick={() => {
+										router.push(
+											`/student/edit/${student.accountId}`
+										);
+									}}
+								>
+									<EditIcon />
+								</Button>
 							</TableCell>
 						</TableRow>
 					))}
