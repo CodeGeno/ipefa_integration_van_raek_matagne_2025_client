@@ -37,18 +37,21 @@ import {
 import { CalendarIcon, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import Link from "next/link";
 
 interface AcademicUE {
-  id: string;
-  label: string;
-  numberOfPeriods: number;
-  sectionId: string;
-  sectionName: string;
-  cycleYear: number;
-  startDate: string;
-  endDate: string;
-  prerequisites: string[];
-  sessions: UESession[];
+  id: number;
+  year: number;
+  start_date: string;
+  end_date: string;
+  ue: {
+    id: number;
+    name: string;
+    section: {
+      id: number;
+      name: string;
+    };
+  };
 }
 
 interface UESession {
@@ -74,392 +77,171 @@ interface FormValues {
   endDate: Date;
 }
 
-export default function AcademicsUEPage() {
+const AcademicUEPage = () => {
+  const [academicUEs, setAcademicUEs] = useState<AcademicUE[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const { toast } = useToast();
-  const [ues, setUes] = useState<AcademicUE[]>([]);
-  const [filteredUes, setFilteredUes] = useState<AcademicUE[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [sections, setSections] = useState<Section[]>([]);
-  const [selectedSection, setSelectedSection] = useState<string>("all");
-  const [selectedYear, setSelectedYear] = useState<string>("all");
-  const [formData, setFormData] = useState<FormValues>({
-    label: "",
-    sectionId: "",
-    cycleYear: 1,
-    numberOfPeriods: 0,
-    startDate: new Date(),
-    endDate: new Date(),
-  });
 
-  useEffect(() => {
-    fetchUEs();
-    fetchSections();
-  }, []);
-
-  useEffect(() => {
-    filterUes();
-  }, [ues, selectedSection, selectedYear]);
-
-  const filterUes = () => {
-    let filtered = [...ues];
-    if (selectedSection !== "all") {
-      filtered = filtered.filter((ue) => ue.sectionId === selectedSection);
-    }
-    if (selectedYear !== "all") {
-      filtered = filtered.filter(
-        (ue) => ue.cycleYear.toString() === selectedYear
-      );
-    }
-    setFilteredUes(filtered);
-  };
-
-  const fetchUEs = async () => {
+  const fetchAcademicUEs = async () => {
     try {
-      setLoading(true);
-      const response = await fetch("http://localhost:8000/api/ue/list/");
-      if (!response.ok) {
-        throw new Error("Failed to fetch UEs");
+      const response = await fetch(
+        "http://localhost:8000/api/ue-management/academic-ues/"
+      );
+      const data = await response.json();
+      if (data.success) {
+        setAcademicUEs(data.data);
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Impossible de récupérer les UE académiques",
+          variant: "destructive",
+        });
       }
-      const responseData = await response.json();
-      // Extract UEs from the nested data property
-      const ues = responseData.data || [];
-      setUes(ues);
-    } catch (err) {
-      console.error("Error fetching UEs:", err);
+    } catch (error) {
       toast({
+        title: "Erreur",
+        description:
+          "Une erreur est survenue lors de la récupération des UE académiques",
         variant: "destructive",
-        title: "Error",
-        description: "Failed to fetch UEs",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchSections = async () => {
-    try {
-      const response = await fetch("http://localhost:8000/api/section/list/");
-      if (!response.ok) {
-        throw new Error("Failed to fetch sections");
-      }
-      const responseData = await response.json();
-      // Extract sections from the nested data property
-      const sections = responseData.data || [];
-      setSections(sections);
-    } catch (err) {
-      console.error("Error fetching sections:", err);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to fetch sections",
-      });
-    }
-  };
-
-  const handleCreateUE = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGenerateNextYear = async () => {
+    setGenerating(true);
     try {
       const response = await fetch(
-        "http://localhost:8000/ue-management/academic-ues/",
+        "http://localhost:8000/api/ue-management/academic-ues/generate-next-year/",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...formData,
-            startDate: formData.startDate.toISOString(),
-            endDate: formData.endDate.toISOString(),
-          }),
         }
       );
-
-      if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
         toast({
-          title: "Success",
-          description: "UE created successfully",
+          title: "Succès",
+          description: data.message,
         });
-        setFormData({
-          label: "",
-          sectionId: "",
-          cycleYear: 1,
-          numberOfPeriods: 0,
-          startDate: new Date(),
-          endDate: new Date(),
-        });
-        fetchUEs();
+        fetchAcademicUEs(); // Rafraîchir la liste
       } else {
         toast({
+          title: "Erreur",
+          description:
+            data.message || "Erreur lors de la génération des UE académiques",
           variant: "destructive",
-          title: "Error",
-          description: "Failed to create UE",
         });
       }
-    } catch (err) {
-      console.error("Error creating UE:", err);
+    } catch (error) {
       toast({
+        title: "Erreur",
+        description:
+          "Une erreur est survenue lors de la génération des UE académiques",
         variant: "destructive",
-        title: "Error",
-        description: "An error occurred while creating the UE",
       });
+    } finally {
+      setGenerating(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return "Invalid date";
-      }
-      return format(date, "dd/MM/yyyy");
-    } catch {
-      return "Invalid date";
-    }
-  };
+  useEffect(() => {
+    fetchAcademicUEs();
+  }, []);
 
   return (
-    <div className="p-6 space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Academic UEs</CardTitle>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Academic UE
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Create New Academic UE</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleCreateUE} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="label">UE Label</Label>
-                    <Input
-                      id="label"
-                      value={formData.label}
-                      onChange={(e) =>
-                        setFormData({ ...formData, label: e.target.value })
-                      }
-                      placeholder="e.g., Projet SGDB"
-                      required
-                    />
-                  </div>
+    <>
+      <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-2 md:space-y-0">
+        <CardTitle className="text-xl md:text-2xl">
+          Liste des UE Académiques
+        </CardTitle>
+        <div className="w-full md:w-auto flex gap-2">
+          <Button
+            onClick={handleGenerateNextYear}
+            disabled={generating}
+            variant="secondary"
+          >
+            {generating ? "Génération..." : "Générer l'année suivante"}
+          </Button>
+          <Link className="w-full" href="/academics-ue/create">
+            <Button className="w-full">Ajouter une UE académique</Button>
+          </Link>
+        </div>
+      </CardHeader>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="section">Section</Label>
-                    <Select
-                      value={formData.sectionId}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, sectionId: value })
-                      }
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a section" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sections.map((section) => (
-                          <SelectItem
-                            key={section.sectionId}
-                            value={section.sectionId.toString()}
-                          >
-                            {section.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cycleYear">Cycle Year</Label>
-                    <Select
-                      value={formData.cycleYear.toString()}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, cycleYear: parseInt(value) })
-                      }
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select cycle year" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1st Year</SelectItem>
-                        <SelectItem value="2">2nd Year</SelectItem>
-                        <SelectItem value="3">3rd Year</SelectItem>
-                        <SelectItem value="4">4th Year</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="periods">Number of Periods</Label>
-                    <Input
-                      id="periods"
-                      type="number"
-                      min={1}
-                      value={formData.numberOfPeriods}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          numberOfPeriods: parseInt(e.target.value),
-                        })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Start Date</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.startDate ? (
-                            format(formData.startDate, "PPP", { locale: fr })
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={formData.startDate}
-                          onSelect={(date) =>
-                            date &&
-                            setFormData({ ...formData, startDate: date })
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>End Date</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.endDate ? (
-                            format(formData.endDate, "PPP", { locale: fr })
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={formData.endDate}
-                          onSelect={(date) =>
-                            date && setFormData({ ...formData, endDate: date })
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <Button type="submit" className="w-full">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create UE
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+      <CardContent className="space-y-4">
+        {/* Form Filters */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col flex-1 gap-2">
+            <Label>Année</Label>
+            <Input placeholder="ex: 2024" />
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 mb-4">
-            <div className="w-1/3">
-              <Label>Filter by Section</Label>
-              <Select
-                value={selectedSection}
-                onValueChange={setSelectedSection}
+
+          <div className="flex flex-col flex-1 gap-2">
+            <Label>Section</Label>
+            <Input placeholder="ex: Bachelier en Informatique" />
+          </div>
+
+          <div className="flex flex-col flex-1 gap-2">
+            <Label>UE</Label>
+            <Input placeholder="ex: Programmation Web" />
+          </div>
+        </div>
+
+        {/* Filter Button */}
+        <div className="flex w-full">
+          <Button className="w-full">Filtrer</Button>
+        </div>
+
+        {/* List of Academic UEs */}
+        <div className="flex flex-col gap-4">
+          {loading ? (
+            <div className="text-center py-4">Chargement...</div>
+          ) : academicUEs.length === 0 ? (
+            <div className="text-center py-4">Aucune UE académique trouvée</div>
+          ) : (
+            academicUEs.map((academicUE) => (
+              <div
+                key={academicUE.id}
+                className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-lg border"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Sections" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sections</SelectItem>
-                  {sections.map((section) => (
-                    <SelectItem
-                      key={section.sectionId}
-                      value={section.sectionId.toString()}
-                    >
-                      {section.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-1/3">
-              <Label>Filter by Year</Label>
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Years" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Years</SelectItem>
-                  <SelectItem value="1">1st Year</SelectItem>
-                  <SelectItem value="2">2nd Year</SelectItem>
-                  <SelectItem value="3">3rd Year</SelectItem>
-                  <SelectItem value="4">4th Year</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                <div className="space-y-1 flex-1">
+                  <h3 className="text-lg font-semibold">
+                    {academicUE.ue.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {academicUE.ue.section.name} - {academicUE.year}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Du {new Date(academicUE.start_date).toLocaleDateString()} au{" "}
+                    {new Date(academicUE.end_date).toLocaleDateString()}
+                  </p>
+                </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Label</TableHead>
-                <TableHead>Section</TableHead>
-                <TableHead>Cycle Year</TableHead>
-                <TableHead>Periods</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>End Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : filteredUes.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center">
-                    No UEs found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredUes.map((ue) => (
-                  <TableRow key={ue.id}>
-                    <TableCell>{ue.label}</TableCell>
-                    <TableCell>{ue.sectionName}</TableCell>
-                    <TableCell>{ue.cycleYear}</TableCell>
-                    <TableCell>{ue.numberOfPeriods}</TableCell>
-                    <TableCell>{formatDate(ue.startDate)}</TableCell>
-                    <TableCell>{formatDate(ue.endDate)}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+                <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                  <Link
+                    href={`/academics-ue/${academicUE.id}`}
+                    className="w-full md:w-auto"
+                  >
+                    <Button className="w-full md:w-auto" variant="outline">
+                      Détails
+                    </Button>
+                  </Link>
+                  <Button variant="secondary" className="w-full md:w-auto">
+                    Modifier
+                  </Button>
+                  <Button variant="destructive" className="w-full md:w-auto">
+                    Supprimer
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </>
   );
-}
+};
+
+export default AcademicUEPage;
