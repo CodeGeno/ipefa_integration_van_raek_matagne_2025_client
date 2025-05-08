@@ -14,7 +14,7 @@ import { AddressForm } from "./AddressForm";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { get, post } from "@/app/fetch";
+import { get, patch } from "@/app/fetch";
 import { Student } from "@/model/entity/users/student.entity";
 
 export const StudentEditForm: React.FC<{ id: string }> = ({ id }) => {
@@ -25,7 +25,7 @@ export const StudentEditForm: React.FC<{ id: string }> = ({ id }) => {
 		fetchStudent();
 	}, [id]);
 	const fetchStudent = async () => {
-		const response = await get<Student>(`/security/student/${id}`);
+		const response = await get<Student>(`/security/student/${id}/`);
 		if (response.data) {
 			const birthDate = new Date(response.data.contactDetails.birthDate);
 			response.data.contactDetails.birthDate = birthDate;
@@ -73,8 +73,8 @@ export const StudentEditForm: React.FC<{ id: string }> = ({ id }) => {
 			) as unknown as Date;
 			console.log(formattedData);
 
-			const response = await post(
-				`/security/student/edit/${id}`,
+			const response = await patch(
+				`/security/student/edit/${id}/`,
 				formattedData
 			);
 

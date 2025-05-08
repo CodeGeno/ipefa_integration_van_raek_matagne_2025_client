@@ -20,9 +20,9 @@ const EmployeeForm = ({
 			setLoading(true);
 			try {
 				const response = await get<Employee>(
-					`/security/employee/${id}`
+					`/security/employee/${id}/`
 				);
-
+				console.log("dataaa", response.data);
 				setEmployee(response.data);
 			} catch (error) {
 				console.log(error);

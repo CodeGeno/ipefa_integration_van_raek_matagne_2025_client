@@ -46,7 +46,7 @@ export const EmployeeTable: React.FC<{
 								<Button
 									onClick={() => {
 										router.push(
-											`/employee/edit/${employee.accountId}`
+											`/employee/edit/${employee.id}`
 										);
 									}}
 								>

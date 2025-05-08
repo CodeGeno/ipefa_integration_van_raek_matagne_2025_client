@@ -66,7 +66,7 @@ export const EmployeeEditForm: React.FC<{
 
 			// Utiliser un chemin relatif pour l'API
 			const response = await patch(
-				`/security/employee/edit/${employee.accountId}/`,
+				`/security/employee/edit/${employee.id}/`,
 				formattedData
 			);
 

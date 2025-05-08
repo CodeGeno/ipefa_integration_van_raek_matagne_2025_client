@@ -31,33 +31,36 @@ export const StudentTable: React.FC<{
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{studentsData?.map((student) => (
-						<TableRow key={student.accountId}>
-							<TableCell>{student.accountId}</TableCell>
-							<TableCell>
-								{student.contactDetails.firstName}
-							</TableCell>
-							<TableCell>
-								{student.contactDetails.lastName}
-							</TableCell>
-							<TableCell>{student.email}</TableCell>
-							<TableCell>
-								{student.contactDetails.phoneNumber}
-							</TableCell>
+					{studentsData?.map((student) => {
+						console.log(student);
+						return (
+							<TableRow key={student.id}>
+								<TableCell>{student.id}</TableCell>
+								<TableCell>
+									{student.contactDetails.firstName}
+								</TableCell>
+								<TableCell>
+									{student.contactDetails.lastName}
+								</TableCell>
+								<TableCell>{student.email}</TableCell>
+								<TableCell>
+									{student.contactDetails.phoneNumber}
+								</TableCell>
 
-							<TableCell>
-								<Button
-									onClick={() => {
-										router.push(
-											`/student/edit/${student.accountId}`
-										);
-									}}
-								>
-									<EditIcon />
-								</Button>
-							</TableCell>
-						</TableRow>
-					))}
+								<TableCell>
+									<Button
+										onClick={() => {
+											router.push(
+												`/student/edit/${student.id}`
+											);
+										}}
+									>
+										<EditIcon />
+									</Button>
+								</TableCell>
+							</TableRow>
+						);
+					})}
 				</TableBody>
 			</Table>
 		</div>

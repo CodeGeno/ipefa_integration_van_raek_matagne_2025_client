@@ -80,17 +80,24 @@ export const EmployeeCreationForm: React.FC = () => {
 				formattedData
 			);
 
-			const result = await response;
+			if (response.success !== true) {
+				toast({
+					title: "Erreur",
+					description: response.message,
+					variant: "destructive",
+				});
+				return;
+			} else {
+				// Afficher un message de succès
+				toast({
+					title: "Succès",
+					description: "Le compte employé a été créé avec succès",
+				});
 
-			// Afficher un message de succès
-			toast({
-				title: "Succès",
-				description: "Le compte employé a été créé avec succès",
-			});
-
-			setTimeout(() => {
-				router.push("/employee/list");
-			}, 3000);
+				setTimeout(() => {
+					router.push("/employee/list");
+				}, 3000);
+			}
 		} catch (error) {
 			console.error("Erreur:", error);
 			toast({
