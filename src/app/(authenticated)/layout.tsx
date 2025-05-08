@@ -17,10 +17,8 @@ const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
 	return (
 		<SidebarProvider>
 			<AppSidebar />
-
 			<main className="w-full">
-				<div className="flex justify-between pt-5 pr-5">
-					<SidebarTrigger />
+				<div className="flex justify-end pt-5 pr-5">
 					<Button
 						onClick={() =>
 							setTheme(

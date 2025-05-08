@@ -1,7 +1,11 @@
 "use client";
+<<<<<<< HEAD
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+=======
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+>>>>>>> ec174f7eba1d6c23e87e1d03568db1d16ffb7fca
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,9 +42,11 @@ import { CalendarIcon, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
-
+import { get } from "@/app/fetch";
+import { useState, useEffect } from "react";
 interface AcademicUE {
   id: number;
+<<<<<<< HEAD
   year: number;
   start_date: string;
   end_date: string;
@@ -245,3 +251,99 @@ const AcademicUEPage = () => {
 };
 
 export default AcademicUEPage;
+=======
+  ue: string;
+  year: number;
+  startDate: string;
+  endDate: string;
+  professor?: string | null;
+}
+
+export default function AcademicsUEPage() {
+  const [academicsData, setAcademicsData] = useState<AcademicUE[]>([]);
+
+  const getAcademicUEs = async () => {
+    try {
+      console.log("Fetching academic UEs");
+      const response = await get<AcademicUE[]>("/ue-management/academic-ues/");
+
+      if (!response.success) {
+        throw new Error(`Error fetching data: ${response.status}`);
+      }
+      console.log(response.data);
+      setAcademicsData(response.data as AcademicUE[]);
+    } catch (error) {
+      console.error("Failed to fetch academic UEs:", error);
+    }
+  };
+
+  useEffect(() => {
+    getAcademicUEs();
+  }, []);
+
+  return (
+    <div className="container mx-auto p-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Gestion des UE Académiques - Année {new Date().getFullYear()}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {academicsData.length > 0 ? (
+            <div className="mt-2 border rounded-md overflow-hidden">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                      ID
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                      Nom
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                      Date de début
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                      Date de fin
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                      Professeur
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {academicsData.map((ue) => (
+                    <tr key={ue.id} className="border-t">
+                      <td className="px-4 py-2">{ue.id}</td>
+                      <td className="px-4 py-2">{ue.ue}</td>
+                      <td className="px-4 py-2">
+                        {new Date(ue.startDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-2">
+                        {new Date(ue.endDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-2">{ue.professor || "N/A"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-gray-500">Aucune UE disponible</p>
+          )}
+
+          <div className="mt-6 flex justify-end space-x-4">
+            <Link href="/ue-management/academics-ue/create">
+              <Button variant="outline">Créer une nouvelle UE</Button>
+            </Link>
+            <Link href="/ue-management/academics-ue">
+              <Button variant="outline">Retour à la liste des UE</Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+>>>>>>> ec174f7eba1d6c23e87e1d03568db1d16ffb7fca

@@ -4,6 +4,7 @@ import {
 	PaginationItem,
 	PaginationLink,
 } from "./ui/pagination";
+import { createUrlWithParams } from "@/utils/url";
 
 export default function PaginationComponent({
 	totalPages,
@@ -35,7 +36,6 @@ const PaginationItems = ({
 }: {
 	totalPages: number;
 	currentPage: number;
-
 	search: string;
 }) => {
 	let items = [];
@@ -44,9 +44,7 @@ const PaginationItems = ({
 			<PaginationItem key={i}>
 				<PaginationLink
 					isActive={i === currentPage}
-					href={
-						`?page=${i}` + (search != "" ? `&search=${search}` : "")
-					}
+					href={createUrlWithParams("", { page: i, search })}
 				>
 					{i}
 				</PaginationLink>

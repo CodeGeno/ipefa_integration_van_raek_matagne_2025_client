@@ -1,41 +1,7 @@
 import { z } from "zod";
-import { AccountRoleEnum } from "@/model/enum/account-role.enum";
-import { GenderEnum } from "@/model/enum/gender.enum";
 
-export const addressSchema = z.object({
-	street: z.string().min(1, "La rue est requise"),
-	number: z.string().min(1, "Le numéro de rue est requis"),
-	complement: z.string().optional(),
-	zipCode: z.string().min(1, "Le code postal est requis"),
-	city: z.string().min(1, "La ville est requise"),
-	state: z.string().min(1, "La province est requise"),
-	country: z.string().min(1, "Le pays est requis"),
-});
-
-export const contactDetailsSchema = z.object({
-	firstName: z.string().min(1, "Le prénom est requis"),
-	lastName: z.string().min(1, "Le nom est requis"),
-	birthDate: z
-		.date({
-			required_error: "La date de naissance est requise",
-			invalid_type_error: "Format de date invalide",
-		})
-		.max(
-			new Date(
-				new Date().getFullYear() - 18,
-				new Date().getMonth(),
-				new Date().getDate()
-			),
-			{
-				message:
-					"Vous devez avoir au moins 18 ans pour créer un compte",
-			}
-		),
-	gender: z.nativeEnum(GenderEnum, {
-		required_error: "Le genre est requis",
-	}),
-	phoneNumber: z.string().min(1, "Le numéro de téléphone est requis"),
-});
+import { addressSchema } from "./address.schema";
+import { contactDetailsSchema } from "./contact-details.schema";
 
 export const accountSchema = z.object({
 	contactDetails: contactDetailsSchema,

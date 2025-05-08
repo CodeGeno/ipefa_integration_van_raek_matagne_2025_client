@@ -1,9 +1,9 @@
 export enum SectionCategoryEnum {
-	economique = "Économique",
-	paramedicale = "Paramédicale",
-	pedagogique = "Pédagogique",
-	sociale = "Sociale",
-	technique = "Technique",
-	agronomique = "Agronomique",
-	artistique = "Artistique",
+	ECONOMIC = "Économique",
+	PARAMEDICAL = "Paramédicale",
+	PEDAGOGICAL = "Pédagogique",
+	SOCIAL = "Sociale",
+	TECHNICAL = "Technique",
+	AGRONOMIC = "Agronomique",
+	ARTISTIC = "Artistique",
 }
