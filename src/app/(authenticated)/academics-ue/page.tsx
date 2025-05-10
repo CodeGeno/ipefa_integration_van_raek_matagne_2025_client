@@ -88,10 +88,10 @@ export default function AcademicsUEPage() {
           )}
 
           <div className="mt-6 flex justify-end space-x-4">
-            <Link href="/ue-management/academics-ue/create">
+            <Link href="academics-ue/create">
               <Button variant="outline">Créer une nouvelle UE</Button>
             </Link>
-            <Link href="/ue-management/academics-ue">
+            <Link href="academics-ue/">
               <Button variant="outline">Retour à la liste des UE</Button>
             </Link>
           </div>

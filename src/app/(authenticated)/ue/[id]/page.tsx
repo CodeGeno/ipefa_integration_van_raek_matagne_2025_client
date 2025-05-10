@@ -1,161 +1,176 @@
 // src/app/(authenticated)/ue/[id]/page.tsx
-import {Button} from "@/components/ui/button";
-import Link from "next/link";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Lesson} from "@/model/entity/lessons/lesson.entity";
-import {Student} from "@/model/entity/users/student.entity";
+"use client";
 
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteUEDialog } from "@/components/ue/delete-ue-dialog";
+import { CheckCircle2, XCircle } from "lucide-react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+
+interface Section {
+  sectionId: number;
+  name: string;
+}
 
 interface ParsedUE {
-    id: number;
-    ue: number;
-    year: number;
-    startDate: string;
-    endDate: string;
-    students: Student[];
-    lessons: Lesson[];
+  ueId: number;
+  name: string;
+  description: string;
+  isActive: boolean;
+  section: number;
+  prerequisites: number[];
+  cycle: number;
+  periods: number;
 }
 
-async function getAcademicUE(id: string): Promise<ParsedUE | null> {
-    try {
-        const response = await fetch(`http://localhost:8000/api/ue-management/academic-ues/${id}/`, {
-            cache: "no-store"
-        });
+async function getSection(id: number): Promise<Section | null> {
+  try {
+    const response = await fetch(`http://localhost:8000/api/section/${id}/`, {
+      cache: "no-store",
+    });
 
-        if (!response.ok) {
-            throw new Error(`Error fetching UE: ${response.status}`);
-        }
-
-        const responseData = await response.json();
-        const item = responseData.data;
-
-        if (!item) return null;
-
-        return {
-            id: item.id,
-            ue: item.ue,
-            year: item.year,
-            startDate: item.start_date,
-            endDate: item.end_date,
-            students: item.students || [],
-            lessons: item.lessons || []
-        };
-    } catch (error) {
-        console.error("Error fetching UE details:", error);
-        return null;
+    if (!response.ok) {
+      throw new Error(`Error fetching section: ${response.status}`);
     }
+
+    const responseData = await response.json();
+    return responseData.data || null;
+  } catch (error) {
+    console.error("Error fetching section details:", error);
+    return null;
+  }
 }
 
-export default async function UEDetailPage({params}: { params: { id: string } }) {
-    const ue = await getAcademicUE(params.id);
+async function getUE(id: string): Promise<ParsedUE | null> {
+  try {
+    const response = await fetch(`http://localhost:8000/api/ue/${id}/`, {
+      cache: "no-store",
+    });
 
-    if (!ue) {
-        return (
-            <div className="container mx-auto p-4">
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="text-center">
-                            <p>UE non trouvée</p>
-                            <Link href="/ue/list">
-                                <Button className="mt-4">Retour à la liste</Button>
-                            </Link>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        );
+    if (!response.ok) {
+      throw new Error(`Error fetching UE: ${response.status}`);
     }
 
+    const responseData = await response.json();
+    return responseData.data || null;
+  } catch (error) {
+    console.error("Error fetching UE details:", error);
+    return null;
+  }
+}
+
+export default function UEDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const [ue, setUE] = useState<ParsedUE | null>(null);
+  const [section, setSection] = useState<Section | null>(null);
+
+  // Load data on component mount
+  React.useEffect(() => {
+    const loadData = async () => {
+      const ueData = await getUE(params.id);
+      setUE(ueData);
+      if (ueData) {
+        const sectionData = await getSection(ueData.section);
+        setSection(sectionData);
+      }
+    };
+    loadData();
+  }, [params.id]);
+
+  const handleDelete = () => {
+    router.push("/ue");
+  };
+
+  if (!ue) {
     return (
-        <div className="container mx-auto p-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Détails de l&apos;UE {ue.ue.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
-                            <h3 className="text-lg font-medium">Informations générales</h3>
-                            <div className="mt-2 space-y-2">
-                                <p><span className="font-medium">Année:</span> {ue.year}</p>
-                                <p><span
-                                    className="font-medium">Date de début:</span> {new Date(ue.startDate).toLocaleDateString()}
-                                </p>
-                                <p><span
-                                    className="font-medium">Date de fin:</span> {new Date(ue.endDate).toLocaleDateString()}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3 className="text-lg font-medium">Séances</h3>
-                            {ue.lessons.length > 0 ? (
-                                <div className="mt-2 border rounded-md overflow-hidden">
-                                    <table className="min-w-full">
-                                        <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">ID</th>
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Date</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {ue.lessons.map((lesson) => (
-                                            <tr key={lesson.lessonId} className="border-t">
-                                                <td className="px-4 py-2">{lesson.lessonId}</td>
-                                                <td className="px-4 py-2">{new Date(lesson.lessonDate).toLocaleDateString()}</td>
-                                            </tr>
-                                        ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ) : (
-                                <p className="mt-2 text-sm text-gray-500">Aucune séance programmée</p>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="mt-6">
-                        <h3 className="text-lg font-medium">Étudiants inscrits</h3>
-                        {ue.students.length > 0 ? (
-                            <div className="mt-2 border rounded-md overflow-hidden">
-                                <table className="min-w-full">
-                                    <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">ID</th>
-                                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Nom</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {ue.students.map((student: Student) => (
-                                        <tr key={student.accountId || student.accountId} className="border-t">
-                                            <td className="px-4 py-2">{student.accountId || student.accountId}</td>
-                                            <td className="px-4 py-2">
-                                                `${student.contactDetails.firstName} ${student.contactDetails.lastName}`
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <p className="mt-2 text-sm text-gray-500">Aucun étudiant inscrit</p>
-                        )}
-                    </div>
-
-                    <div className="mt-6 flex justify-end space-x-4">
-                        <Link href={`/ue/edit/${ue.id}`}>
-                            <Button variant="outline">
-                                Modifier
-                            </Button>
-                        </Link>
-                        <Link href="/ue/list">
-                            <Button variant="outline">
-                                Retour à la liste
-                            </Button>
-                        </Link>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+      <div className="container mx-auto p-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p>UE non trouvée</p>
+              <Link href="/ue">
+                <Button className="mt-4">Retour à la liste</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
+  }
+
+  return (
+    <div className="container mx-auto p-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>
+            {ue.name} - {section ? section.name : "Section non trouvée"}
+          </CardTitle>
+          <div className="flex items-center gap-4">
+            {ue.isActive ? (
+              <div className="flex items-center text-green-600">
+                <CheckCircle2 className="h-5 w-5 mr-1" />
+                <span>Active</span>
+              </div>
+            ) : (
+              <div className="flex items-center text-red-600">
+                <XCircle className="h-5 w-5 mr-1" />
+                <span>Inactive</span>
+              </div>
+            )}
+            <DeleteUEDialog
+              ueId={ue.ueId}
+              ueName={ue.name}
+              onDelete={handleDelete}
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <h3 className="text-lg font-medium">Informations générales</h3>
+              <div className="mt-2 space-y-2">
+                <p>
+                  <span className="font-medium">Nom:</span> {ue.name}
+                </p>
+                <p>
+                  <span className="font-medium">Description:</span>{" "}
+                  {ue.description || "Non spécifiée"}
+                </p>
+                <p>
+                  <span className="font-medium">Cycle:</span> {ue.cycle}
+                </p>
+                <p>
+                  <span className="font-medium">Périodes:</span> {ue.periods}
+                </p>
+              </div>
+            </div>
+
+            {ue.prerequisites.length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium">Prérequis</h3>
+                <div className="mt-2">
+                  <ul className="list-disc list-inside">
+                    {ue.prerequisites.map((prereq: number) => (
+                      <li key={prereq}>UE {prereq}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 flex justify-end space-x-4">
+            <Link href={`/ue/update/${ue.ueId}`}>
+              <Button variant="outline">Modifier</Button>
+            </Link>
+            <Link href="/ue">
+              <Button variant="outline">Retour à la liste</Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
