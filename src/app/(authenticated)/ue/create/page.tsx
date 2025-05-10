@@ -110,6 +110,7 @@ const UECreatePage = () => {
 
 	const onSubmit = async (data: UEFormData) => {
 		try {
+			console.log(data);
 			const response = await fetch(
 				"http://localhost:8000/api/ue/create/",
 				{
@@ -129,6 +130,7 @@ const UECreatePage = () => {
 			);
 
 			if (!response.ok) {
+				console.log(response);
 				throw new Error(`Error creating UE: ${response.status}`);
 			}
 
@@ -226,14 +228,16 @@ const UECreatePage = () => {
 										Chargement des sections...
 									</SelectItem>
 								) : sections.length > 0 ? (
-									sections.map((section) => (
-										<SelectItem
-											key={section.id.toString()}
-											value={section.id.toString()}
-										>
-											{section.name}
-										</SelectItem>
-									))
+									sections.map((section) => {
+										return (
+											<SelectItem
+												key={section.id.toString()}
+												value={section.id.toString()}
+											>
+												{section.name}
+											</SelectItem>
+										);
+									})
 								) : (
 									<SelectItem
 										value="none"
