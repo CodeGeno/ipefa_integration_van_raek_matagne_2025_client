@@ -84,6 +84,17 @@ const SectionTable: React.FC<SectionTableProps> = ({
 								variant="secondary"
 								className="w-full md:w-auto"
 								onClick={() =>
+									router.push(
+										`/section/details/${section.id}`
+									)
+								}
+							>
+								Détails
+							</Button>
+							<Button
+								variant="secondary"
+								className="w-full md:w-auto"
+								onClick={() =>
 									router.push(`/section/edit/${section.id}`)
 								}
 							>
@@ -93,7 +104,7 @@ const SectionTable: React.FC<SectionTableProps> = ({
 								title="Supprimer la section"
 								description="Voulez-vous vraiment supprimer la section ?"
 								actionButtonAction={() => {
-									deleteSection(section.id);
+									deleteSection(section.id.toString());
 								}}
 							>
 								<p className="bg-destructive text-destructive-foreground rounded-md px-2 py-1">

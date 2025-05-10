@@ -55,10 +55,17 @@ export const StudentTable: React.FC<{
 											);
 										}}
 									>
-										<EditIcon />
+										Modifier
 									</Button>
-									<Button>Inscire à une section</Button>
-									<Button>Inscire à une UE</Button>
+									<Button
+										onClick={() => {
+											router.push(
+												`/section/registration/${student.id}`
+											);
+										}}
+									>
+										Inscire à une section
+									</Button>
 								</TableCell>
 							</TableRow>
 						);

@@ -11,7 +11,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-
+import { useParams } from "next/navigation";
 // Énumération des statuts de présence
 enum AttendanceStatusEnum {
 	PRESENT = "P",
@@ -217,7 +217,7 @@ const AttendanceListPage = (params: {
 		year?: string;
 	};
 }) => {
-	const { ueId, year } = params.searchParams;
+	const { ueId, year } = useParams();
 	const [lessonFilter, setLessonFilter] = useState<number | null>(null);
 	const [studentFilter, setStudentFilter] = useState<number | null>(null);
 
