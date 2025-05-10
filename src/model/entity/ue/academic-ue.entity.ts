@@ -6,9 +6,15 @@ import { Employee } from "../lessons/employee.entity";
 
 export interface AcademicUE extends BaseEntity {
 	id: string;
-	year: number;
-	startDate: Date;
-	endDate: Date;
+	label: string;
+	numberOfPeriods: number;
+	sectionId: string;
+	sectionName: string;
+	cycleYear: number;
+	startDate: string;
+	endDate: string;
+	prerequisites: string[];
+	sessions: UESession[];
 	ue: UE;
 	students: Student[];
 	lessons: Lesson[];
@@ -24,7 +30,7 @@ export interface UESession {
 export interface CreateAcademicUEDto {
 	label: string;
 	numberOfPeriods: number;
-	section: string;
+	sectionId: string;
 	cycleYear: number;
 	startDate: string;
 	endDate: string;
