@@ -97,14 +97,12 @@ export default function CreateAcademicUEPage() {
   // Calculate sessions based on periods and dates
   const calculateSessions = (start: Date, end: Date, periods: number) => {
     const sessions = [];
-    const totalDays = Math.floor(
-      (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    const daysBetweenSessions = Math.floor(totalDays / (periods - 1));
+    const numberOfSessions = Math.ceil(periods / 4);
+    const DAYS_BETWEEN_SESSIONS = 7; // Une semaine calendrier
 
-    for (let i = 0; i < periods; i++) {
+    for (let i = 0; i < numberOfSessions; i++) {
       const sessionDate = new Date(start);
-      sessionDate.setDate(start.getDate() + i * daysBetweenSessions);
+      sessionDate.setDate(start.getDate() + i * DAYS_BETWEEN_SESSIONS);
       sessions.push({
         date: format(sessionDate, "yyyy-MM-dd"),
         status: "scheduled" as const,

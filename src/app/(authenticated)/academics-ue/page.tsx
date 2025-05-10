@@ -182,10 +182,23 @@ export default function AcademicsUEPage() {
                       <td className="px-4 py-2">{ue.ue.section}</td>
                       <td className="px-4 py-2">
                         <div className="flex space-x-2">
-                          <Link href={`/academics-ue/lessons/${ue.id}`}>
-                            <Button variant="outline" size="sm">
-                              Gérer les leçons
-                            </Button>
+                          <Link
+                            href={`/academics-ue/lessons/${ue.id}`}
+                            className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                          >
+                            Gérer les leçons
+                          </Link>
+                          <Link
+                            href={`/academics-ue/results/${ue.id}`}
+                            className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+                          >
+                            Gérer les résultats
+                          </Link>
+                          <Link
+                            href={`/academics-ue/register/${ue.id}`}
+                            className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
+                          >
+                            Gérer les inscriptions
                           </Link>
                         </div>
                       </td>
