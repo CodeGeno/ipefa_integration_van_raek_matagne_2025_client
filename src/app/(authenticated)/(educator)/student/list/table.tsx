@@ -21,7 +21,7 @@ export const StudentTable: React.FC<{
 		<div className="container mx-auto">
 			<Table>
 				<TableHeader>
-					<TableRow>
+					<TableRow className="text-center">
 						<TableHead>ID</TableHead>
 						<TableHead>Prénom</TableHead>
 						<TableHead>Nom</TableHead>
@@ -57,6 +57,8 @@ export const StudentTable: React.FC<{
 									>
 										<EditIcon />
 									</Button>
+									<Button>Inscire à une section</Button>
+									<Button>Inscire à une UE</Button>
 								</TableCell>
 							</TableRow>
 						);

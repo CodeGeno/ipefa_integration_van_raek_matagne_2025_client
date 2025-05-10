@@ -45,19 +45,15 @@ const data = {
 				},
 				{
 					title: "Section",
-					url: "/section", // Remplacez par le chemin réel
+					url: "/section/list", // Remplacez par le chemin réel
 				},
 				{
 					title: "Étudiants",
-					url: "/etudiants", // Remplacez par le chemin réel
+					url: "/student/list", // Remplacez par le chemin réel
 				},
 				{
-					title: "Professeurs",
-					url: "/professeurs", // Remplacez par le chemin réel
-				},
-				{
-					title: "Éducateurs",
-					url: "/educateurs", // Remplacez par le chemin réel
+					title: "Employés",
+					url: "/employee/list", // Remplacez par le chemin réel
 				},
 				{
 					title: "Présences",

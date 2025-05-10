@@ -62,7 +62,7 @@ const SectionTable: React.FC<SectionTableProps> = ({
 			<div className="flex flex-col gap-4 ">
 				{sections.map((section) => (
 					<div
-						key={section.sectionId}
+						key={section.id}
 						className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-lg border"
 					>
 						<div className="space-y-1 flex-1">
@@ -84,9 +84,7 @@ const SectionTable: React.FC<SectionTableProps> = ({
 								variant="secondary"
 								className="w-full md:w-auto"
 								onClick={() =>
-									router.push(
-										`/section/edit/${section.sectionId}`
-									)
+									router.push(`/section/edit/${section.id}`)
 								}
 							>
 								Modifier
@@ -95,7 +93,7 @@ const SectionTable: React.FC<SectionTableProps> = ({
 								title="Supprimer la section"
 								description="Voulez-vous vraiment supprimer la section ?"
 								actionButtonAction={() => {
-									deleteSection(section.sectionId);
+									deleteSection(section.id);
 								}}
 							>
 								<p className="bg-destructive text-destructive-foreground rounded-md px-2 py-1">
