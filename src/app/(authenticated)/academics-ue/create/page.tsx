@@ -35,8 +35,28 @@ interface UEOption {
 
 interface Professor {
   id: number;
-  firstName: string;
-  lastName: string;
+  role: string;
+  contactDetails: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    birthDate: string;
+    gender: string;
+    identifier: string;
+  };
+  address: {
+    id: number;
+    street: string;
+    city: string;
+    zipCode: string;
+    country: string;
+    number: string;
+    complement: string;
+    state: string;
+  };
+  email: string;
+  matricule: string;
 }
 
 interface AcademicUEFormData {
@@ -113,6 +133,7 @@ export default function CreateAcademicUEPage() {
     const ue = ueOptions.find((u) => u.id.toString() === value);
     setSelectedUE(ue || null);
     handleChange("ue_id", value);
+    handleChange("professorId", "");
   };
 
   async function getUEOptions() {
@@ -304,15 +325,23 @@ export default function CreateAcademicUEPage() {
                 <Label htmlFor="professor">Professeur</Label>
                 <Select
                   onValueChange={(value) => handleChange("professorId", value)}
+                  disabled={!selectedUE}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un professeur (optionnel)" />
+                    <SelectValue
+                      placeholder={
+                        selectedUE
+                          ? "Sélectionner un professeur (optionnel)"
+                          : "Sélectionnez d'abord une UE"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       {professors.map((prof) => (
                         <SelectItem key={prof.id} value={prof.id.toString()}>
-                          {prof.firstName} {prof.lastName}
+                          {prof.contactDetails.firstName}{" "}
+                          {prof.contactDetails.lastName}
                         </SelectItem>
                       ))}
                     </SelectGroup>
