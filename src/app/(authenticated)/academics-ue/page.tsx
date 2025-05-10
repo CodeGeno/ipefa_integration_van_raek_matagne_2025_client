@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { get } from "@/app/fetch";
 import { useState, useEffect } from "react";
+import { Employee } from "@/model/entity/lessons/employee.entity";
+import { UE } from "@/model/entity/ue/ue.entity";
+
 interface AcademicUE {
   id: number;
-  ue: string;
+  ue: UE;
   year: number;
-  startDate: string;
-  endDate: string;
-  professor?: string | null;
+  start_date: string;
+  end_date: string;
+  professor?: Employee | null;
 }
 
 export default function AcademicsUEPage() {
@@ -67,19 +70,26 @@ export default function AcademicsUEPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {academicsData.map((ue) => (
-                    <tr key={ue.id} className="border-t">
-                      <td className="px-4 py-2">{ue.id}</td>
-                      <td className="px-4 py-2">{ue.ue}</td>
-                      <td className="px-4 py-2">
-                        {new Date(ue.startDate).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-2">
-                        {new Date(ue.endDate).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-2">{ue.professor || "N/A"}</td>
-                    </tr>
-                  ))}
+                  {academicsData.map((ue) => {
+                    console.log(ue);
+                    return (
+                      <tr key={ue.id} className="border-t">
+                        <td className="px-4 py-2">{ue.id}</td>
+                        <td className="px-4 py-2">{ue.ue.name}</td>
+                        <td className="px-4 py-2">
+                          {new Date(ue.start_date).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-2">
+                          {new Date(ue.end_date).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-2">
+                          {ue.professor
+                            ? `${ue.professor.contactDetails.firstName} ${ue.professor.contactDetails.lastName}`
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
