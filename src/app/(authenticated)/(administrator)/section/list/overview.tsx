@@ -19,6 +19,13 @@ import {
 import { SectionTypeEnum } from "@/model/enum/section-type.enum";
 import { SectionCategoryEnum } from "@/model/enum/section-category.enum";
 import { createUrlWithParams } from "@/utils/url";
+import {
+  Search,
+  Filter,
+  GraduationCap,
+  BookOpen,
+  RotateCcw,
+} from "lucide-react";
 
 export default function SectionOverview({
   url,
@@ -42,9 +49,7 @@ export default function SectionOverview({
   }, [url]);
 
   const getSections = async () => {
-    console.log(url);
     const response = await getPaginated<Section[]>(url);
-    console.log(response);
     if (response.success) {
       setSectionsData(response);
     }
@@ -76,27 +81,35 @@ export default function SectionOverview({
     await router.push(createUrlWithParams("/section/list", filterParams));
   };
 
+  const handleResetFilters = async () => {
+    setSearchInput("");
+    setCategory("all");
+    setType("all");
+    await router.push("/section/list");
+  };
+
   return (
-    <div className="space-y-4 sm:px-0">
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex flex-col flex-1 gap-2">
-          <Label>Nom de la section</Label>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
           <Input
             placeholder="Rechercher une section"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            className="pl-10"
           />
         </div>
 
-        <div className="flex flex-col flex-1 gap-2">
-          <Label>Catégorie</Label>
+        <div className="relative">
+          <BookOpen className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger>
+            <SelectTrigger className="pl-10">
               <SelectValue placeholder="Sélectionnez une catégorie" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Toutes</SelectItem>
+              <SelectItem value="all">Toutes les catégories</SelectItem>
               {Object.keys(SectionCategoryEnum).map((key) => (
                 <SelectItem key={key} value={key}>
                   {SectionCategoryEnum[key as keyof typeof SectionCategoryEnum]}
@@ -106,14 +119,14 @@ export default function SectionOverview({
           </Select>
         </div>
 
-        <div className="flex flex-col flex-1 gap-2">
-          <Label>Type de cursus</Label>
+        <div className="relative">
+          <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
           <Select value={type} onValueChange={setType}>
-            <SelectTrigger>
+            <SelectTrigger className="pl-10">
               <SelectValue placeholder="Choisissez un type de cursus" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous</SelectItem>
+              <SelectItem value="all">Tous les types</SelectItem>
               {Object.keys(SectionTypeEnum).map((key) => (
                 <SelectItem key={key} value={key}>
                   {SectionTypeEnum[key as keyof typeof SectionTypeEnum]}
@@ -124,8 +137,20 @@ export default function SectionOverview({
         </div>
       </div>
 
-      <div className="flex w-full py-4">
-        <Button className="w-full" onClick={handleFilter}>
+      <div className="flex justify-end gap-2">
+        <Button
+          onClick={handleResetFilters}
+          variant="outline"
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
+        >
+          <RotateCcw className="h-4 w-4" />
+          Réinitialiser
+        </Button>
+        <Button
+          onClick={handleFilter}
+          className="flex items-center gap-2 bg-slate-100 text-slate-700 hover:bg-slate-200"
+        >
+          <Filter className="h-4 w-4" />
           Filtrer
         </Button>
       </div>

@@ -7,7 +7,15 @@ import { StudentResultsModal } from "@/components/StudentResultsModal";
 import { AcademicUE, Student } from "@/types";
 import { get } from "@/app/fetch";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  GraduationCap,
+  Users,
+  Clock,
+  BookOpen,
+  ArrowUpDown,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function ResultsPage({
   params,
@@ -19,6 +27,10 @@ export default function ResultsPage({
   const [academicUE, setAcademicUE] = useState<AcademicUE | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Student;
+    direction: "asc" | "desc";
+  } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,80 +58,187 @@ export default function ResultsPage({
     setSelectedStudent(student);
   };
 
+  const requestSort = (key: keyof Student) => {
+    let direction: "asc" | "desc" = "asc";
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (column: keyof Student) => {
+    if (!sortConfig || sortConfig.key !== column) {
+      return <ArrowUpDown className="h-4 w-4 ml-1" />;
+    }
+    return sortConfig.direction === "asc" ? (
+      <ArrowUpDown className="h-4 w-4 ml-1" />
+    ) : (
+      <ArrowUpDown className="h-4 w-4 ml-1" />
+    );
+  };
+
+  const sortedStudents = academicUE?.students
+    ? [...academicUE.students].sort((a, b) => {
+        if (!sortConfig) return 0;
+
+        const { key, direction } = sortConfig;
+        let comparison = 0;
+
+        switch (key) {
+          case "contactDetails":
+            comparison = a.contactDetails.lastName.localeCompare(
+              b.contactDetails.lastName
+            );
+            break;
+          default:
+            return 0;
+        }
+
+        return direction === "asc" ? comparison : -comparison;
+      })
+    : [];
+
   if (isLoading) {
-    return <div className="p-4">Chargement...</div>;
+    return (
+      <div className="container mx-auto p-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Chargement...</CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="p-4 text-red-500">{error}</div>;
+    return (
+      <div className="container mx-auto p-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-red-600">{error}</CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+    );
   }
 
   if (!academicUE) {
-    return <div className="p-4">UE non trouvée</div>;
+    return (
+      <div className="container mx-auto p-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>UE non trouvée</CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4">
-            <Link href="/academics-ue">
-              <Button variant="outline" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Retour à la liste des UE
-              </Button>
-            </Link>
-            <CardTitle>Résultats des étudiants</CardTitle>
-          </div>
-          <p className="text-gray-600">
-            {academicUE.year} - {academicUE.ue.periods} périodes
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Résultats des étudiants
+          </h1>
+          <p className="text-muted-foreground">
+            {academicUE.ue.name} - {academicUE.year}
           </p>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <Link href="/academics-ue">
+          <Button variant="outline" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Retour à la liste des UE
+          </Button>
+        </Link>
+      </div>
+
+      <Card className="shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-2 text-slate-600">
+              <BookOpen className="h-4 w-4" />
+              <span>{academicUE.ue.periods} périodes</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-600">
+              <Users className="h-4 w-4" />
+              <span>{academicUE.students.length} étudiants inscrits</span>
+            </div>
+          </div>
+
           <div className="mt-4">
-            <h2 className="text-xl font-semibold mb-4">Liste des étudiants</h2>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" />
+              Liste des étudiants
+            </h2>
             {academicUE.students.length > 0 ? (
-              <div className="mt-2 border rounded-md overflow-hidden">
+              <div className="border rounded-lg overflow-hidden">
                 <table className="min-w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-slate-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                        Matricule
+                      <th
+                        className="px-6 py-4 text-left text-sm font-medium text-slate-500 cursor-pointer hover:bg-slate-100 transition-colors"
+                        onClick={() => requestSort("contactDetails")}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Nom
+                          {getSortIcon("contactDetails")}
+                        </div>
                       </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                        Nom
+                      <th className="px-6 py-4 text-left text-sm font-medium text-slate-500">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Prénom
+                        </div>
                       </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                        Prénom
+                      <th className="px-6 py-4 text-left text-sm font-medium text-slate-500">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          Identifiant
+                        </div>
                       </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                        Email
+                      <th className="px-6 py-4 text-left text-sm font-medium text-slate-500">
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4" />
+                          Email
+                        </div>
                       </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                      <th className="px-6 py-4 text-right text-sm font-medium text-slate-500">
                         Actions
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {academicUE.students.map((student: Student) => (
-                      <tr key={student.id} className="border-t">
-                        <td className="px-4 py-2">
-                          {student.contactDetails.identifier}
-                        </td>
-                        <td className="px-4 py-2">
+                    {sortedStudents.map((student: Student) => (
+                      <tr
+                        key={student.id}
+                        className="border-t hover:bg-slate-50 transition-colors"
+                      >
+                        <td className="px-6 py-4 font-medium">
                           {student.contactDetails.lastName}
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-6 py-4">
                           {student.contactDetails.firstName}
                         </td>
-                        <td className="px-4 py-2">{student.email}</td>
-                        <td className="px-4 py-2">
-                          <Button
-                            onClick={() => handleViewResults(student)}
-                            className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                          >
-                            Gérer les résultats
-                          </Button>
+                        <td className="px-6 py-4">
+                          {student.contactDetails.identifier}
+                        </td>
+                        <td className="px-6 py-4">{student.email}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex justify-end">
+                            <Button
+                              onClick={() => handleViewResults(student)}
+                              className="bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors"
+                            >
+                              <GraduationCap className="h-4 w-4 mr-2" />
+                              Gérer les résultats
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -127,9 +246,9 @@ export default function ResultsPage({
                 </table>
               </div>
             ) : (
-              <p className="mt-2 text-sm text-gray-500">
-                Aucun étudiant inscrit
-              </p>
+              <div className="text-center py-8 bg-slate-50 rounded-lg">
+                <p className="text-slate-600">Aucun étudiant inscrit</p>
+              </div>
             )}
           </div>
         </CardContent>

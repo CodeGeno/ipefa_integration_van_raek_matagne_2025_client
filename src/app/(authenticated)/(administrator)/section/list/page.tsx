@@ -3,59 +3,61 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { createUrlWithParams } from "@/utils/url";
 import SectionOverview from "./overview";
 import Link from "next/link";
+import { GraduationCap, Plus } from "lucide-react";
 
 const SectionPage = async ({
-	searchParams,
+  searchParams,
 }: {
-	searchParams: Promise<{
-		search: string;
-		page: number;
-		category: string;
-		type: string;
-	}>;
+  searchParams: Promise<{
+    search: string;
+    page: number;
+    category: string;
+    type: string;
+  }>;
 }) => {
-	const { search, page, category, type } = await searchParams;
-	const url = createUrlWithParams("/section/list", {
-		search,
-		page,
-		category,
-		type,
-	});
-	return (
-		<>
-			<CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-2 md:space-y-0">
-				<CardTitle className="text-xl md:text-2xl">
-					Liste des Sections
-				</CardTitle>
-				<div className="w-full md:w-auto flex justify-end ">
-					<Link
-						className="w-full"
-						href="/section/create"
-					>
-						<Button className="w-full">Ajouter une section</Button>
-					</Link>
-				</div>
-			</CardHeader>
+  const { search, page, category, type } = await searchParams;
+  const url = createUrlWithParams("/section/list", {
+    search,
+    page,
+    category,
+    type,
+  });
+  return (
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">Sections</h1>
+          <p className="text-muted-foreground">
+            Gérez les sections et leurs unités d'enseignement
+          </p>
+        </div>
+        <Link href="/section/create">
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Ajouter une section
+          </Button>
+        </Link>
+      </div>
 
-			<CardContent>
-				<SectionOverview
-					url={url}
-					searchValue={search}
-					categoryValue={category}
-					typeValue={type}
-				/>
-			</CardContent>
-		</>
-	);
+      <CardContent className="p-6 bg-white rounded-lg shadow-sm">
+        <SectionOverview
+          url={url}
+          searchValue={search}
+          categoryValue={category}
+          typeValue={type}
+        />
+      </CardContent>
+    </div>
+  );
 };
 
 export default SectionPage;

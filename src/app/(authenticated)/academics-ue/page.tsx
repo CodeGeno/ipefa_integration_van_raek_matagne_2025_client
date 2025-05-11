@@ -21,6 +21,20 @@ import { useRouter } from "next/navigation";
 import { createUrlWithParams } from "@/utils/url";
 import { ApiPaginatedResponse } from "@/model/api/api.response";
 import PaginationComponent from "@/components/pagination-component";
+import {
+  ArrowUpDown,
+  BookOpen,
+  Calendar,
+  GraduationCap,
+  Search,
+  Users,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AcademicUE {
   id: number;
@@ -42,12 +56,14 @@ export default function AcademicsUEPage({
   sectionValue,
   cycleValue,
   activeOnlyValue,
+  yearValue,
 }: {
   url: string;
   searchValue: string;
   sectionValue: string;
   cycleValue: string;
   activeOnlyValue: string;
+  yearValue: string;
 }) {
   const [academicsData, setAcademicsData] =
     useState<ApiPaginatedResponse<AcademicUE[]>>();
@@ -58,9 +74,17 @@ export default function AcademicsUEPage({
   const [searchInput, setSearchInput] = useState<string>(searchValue ?? "");
   const [section, setSection] = useState<string>(sectionValue || "all");
   const [cycle, setCycle] = useState<string>(cycleValue || "all");
+  const [year, setYear] = useState<string>(
+    yearValue || new Date().getFullYear().toString()
+  );
   const [activeOnly, setActiveOnly] = useState<boolean>(
     activeOnlyValue === "true"
   );
+
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: "asc" | "desc";
+  } | null>(null);
 
   const getSections = async () => {
     try {
@@ -82,6 +106,7 @@ export default function AcademicsUEPage({
       if (searchInput) params.append("name", searchInput);
       if (section !== "all") params.append("section_id", section);
       if (cycle !== "all") params.append("cycle", cycle);
+      if (year) params.append("year", year);
       if (activeOnly) params.append("active_only", "true");
 
       const queryString = params.toString();
@@ -106,13 +131,14 @@ export default function AcademicsUEPage({
 
   useEffect(() => {
     getAcademicUEs();
-  }, [url, searchInput, section, cycle, activeOnly]);
+  }, [url, searchInput, section, cycle, year, activeOnly]);
 
   const handleSearch = async () => {
     const searchParams = {
       name: searchInput,
       section_id: section === "all" ? undefined : section,
       cycle: cycle === "all" ? undefined : cycle,
+      year: year,
       active_only: activeOnly ? "true" : undefined,
     };
     await router.push(createUrlWithParams("/academics-ue", searchParams));
@@ -128,6 +154,7 @@ export default function AcademicsUEPage({
       page: 1,
       section_id: section === "all" ? undefined : section,
       cycle: cycle === "all" ? undefined : cycle,
+      year: year,
       active_only: activeOnly ? "true" : undefined,
     };
     await router.push(createUrlWithParams("/academics-ue", filterParams));
@@ -137,36 +164,107 @@ export default function AcademicsUEPage({
     setSearchInput("");
     setSection("all");
     setCycle("all");
+    setYear(new Date().getFullYear().toString());
     setActiveOnly(false);
     await router.push("/academics-ue");
   };
 
+  const handleSort = (key: string) => {
+    let direction: "asc" | "desc" = "asc";
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedData = academicsData?.data
+    ? [...academicsData.data].sort((a, b) => {
+        if (!sortConfig) return 0;
+
+        const { key, direction } = sortConfig;
+        let comparison = 0;
+
+        switch (key) {
+          case "name":
+            comparison = a.ue.name.localeCompare(b.ue.name);
+            break;
+          case "section":
+            const sectionA =
+              sections.find((s) => s.id === a.ue.section)?.name || "";
+            const sectionB =
+              sections.find((s) => s.id === b.ue.section)?.name || "";
+            comparison = sectionA.localeCompare(sectionB);
+            break;
+          case "cycle":
+            comparison = a.ue.cycle - b.ue.cycle;
+            break;
+          case "start_date":
+            comparison =
+              new Date(a.start_date).getTime() -
+              new Date(b.start_date).getTime();
+            break;
+          case "end_date":
+            comparison =
+              new Date(a.end_date).getTime() - new Date(b.end_date).getTime();
+            break;
+          case "professor":
+            const profA = a.professor
+              ? `${a.professor.contactDetails.firstName} ${a.professor.contactDetails.lastName}`
+              : "";
+            const profB = b.professor
+              ? `${b.professor.contactDetails.firstName} ${b.professor.contactDetails.lastName}`
+              : "";
+            comparison = profA.localeCompare(profB);
+            break;
+          default:
+            return 0;
+        }
+
+        return direction === "asc" ? comparison : -comparison;
+      })
+    : [];
+
   return (
-    <div className="container mx-auto p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex gap-4 items-center">
-            Gestion des UE Académiques - Année {new Date().getFullYear()}
-            <Link href="academics-ue/create">
-              <Button variant="outline">+ Ajouter UE Académique</Button>
-            </Link>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4 sm:px-0">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex flex-col flex-1 gap-2">
-                <Label>Nom de l&apos;UE</Label>
-                <Input
-                  placeholder="Rechercher une UE..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">UE Académiques</h1>
+          <p className="text-muted-foreground">
+            Gérez les unités d'enseignement académiques
+          </p>
+        </div>
+        <Link href="academics-ue/create">
+          <Button className="bg-primary hover:bg-primary/90 transition-colors">
+            <BookOpen className="w-4 h-4 mr-2" />
+            Ajouter une UE Académique
+          </Button>
+        </Link>
+      </div>
+
+      <Card className="shadow-sm">
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Recherche</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher une UE..."
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="pl-9"
+                  />
+                </div>
               </div>
 
-              <div className="flex flex-col flex-1 gap-2">
-                <Label>Section</Label>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Section</Label>
                 <Select value={section} onValueChange={setSection}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionnez une section" />
@@ -185,8 +283,8 @@ export default function AcademicsUEPage({
                 </Select>
               </div>
 
-              <div className="flex flex-col flex-1 gap-2">
-                <Label>Cycle</Label>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Cycle</Label>
                 <Select value={cycle} onValueChange={setCycle}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choisissez un cycle" />
@@ -200,102 +298,170 @@ export default function AcademicsUEPage({
                 </Select>
               </div>
 
-              <div className="flex items-end space-x-2">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="active-filter"
-                    checked={activeOnly}
-                    onCheckedChange={setActiveOnly}
-                  />
-                  <Label htmlFor="active-filter">UEs actives uniquement</Label>
-                </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Année</Label>
+                <Select value={year} onValueChange={setYear}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisissez une année" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 5 }, (_, i) => {
+                      const year = new Date().getFullYear() - 2 + i;
+                      return (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 bg-slate-50 p-2 rounded-lg">
+                <Switch
+                  id="active-filter"
+                  checked={activeOnly}
+                  onCheckedChange={setActiveOnly}
+                />
+                <Label htmlFor="active-filter" className="text-sm font-medium">
+                  UEs actives uniquement
+                </Label>
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleReset}>
+                  Réinitialiser
+                </Button>
+                <Button onClick={handleFilter}>Filtrer</Button>
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="flex w-full py-4 gap-4">
-            <Button className="w-full" onClick={handleFilter}>
-              Filtrer
-            </Button>
-            <Button variant="outline" className="w-full" onClick={handleReset}>
-              Réinitialiser les filtres
-            </Button>
-          </div>
-
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-md">
-              {error}
-            </div>
-          )}
-
-          {academicsData && academicsData.data.length > 0 ? (
+      <Card className="shadow-sm">
+        <CardContent className="p-6">
+          {academicsData?.data && academicsData.data.length > 0 ? (
             <>
-              <div className="mt-2 border rounded-md overflow-hidden">
-                <table className="min-w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                        Nom
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3 font-medium text-slate-500">
+                        <button
+                          onClick={() => handleSort("name")}
+                          className="flex items-center space-x-1 hover:text-slate-700"
+                        >
+                          <span>Nom de l'UE</span>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </button>
                       </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                        Section
+                      <th className="text-left p-3 font-medium text-slate-500">
+                        <button
+                          onClick={() => handleSort("section")}
+                          className="flex items-center space-x-1 hover:text-slate-700"
+                        >
+                          <span>Section</span>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </button>
                       </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                        Cycle
+                      <th className="text-left p-3 font-medium text-slate-500">
+                        <button
+                          onClick={() => handleSort("cycle")}
+                          className="flex items-center space-x-1 hover:text-slate-700"
+                        >
+                          <span>Cycle</span>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </button>
                       </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                        Date de début
+                      <th className="text-left p-3 font-medium text-slate-500">
+                        <button
+                          onClick={() => handleSort("start_date")}
+                          className="flex items-center space-x-1 hover:text-slate-700"
+                        >
+                          <span>Date de début</span>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </button>
                       </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                        Date de fin
+                      <th className="text-left p-3 font-medium text-slate-500">
+                        <button
+                          onClick={() => handleSort("end_date")}
+                          className="flex items-center space-x-1 hover:text-slate-700"
+                        >
+                          <span>Date de fin</span>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </button>
                       </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                        Professeur
+                      <th className="text-left p-3 font-medium text-slate-500">
+                        <button
+                          onClick={() => handleSort("professor")}
+                          className="flex items-center space-x-1 hover:text-slate-700"
+                        >
+                          <span>Professeur</span>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </button>
                       </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                      <th className="text-right p-3 font-medium text-slate-500">
                         Actions
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {academicsData.data.map((ue) => (
-                      <tr key={ue.id} className="border-t">
-                        <td className="px-4 py-2">{ue.ue.name}</td>
-                        <td className="px-4 py-2">
+                    {sortedData.map((ue) => (
+                      <tr
+                        key={ue.id}
+                        className="border-b hover:bg-slate-50 transition-colors duration-150"
+                      >
+                        <td className="p-3 font-medium">{ue.ue.name}</td>
+                        <td className="p-3">
                           {sections.find((s) => s.id === ue.ue.section)?.name ||
                             "N/A"}
                         </td>
-                        <td className="px-4 py-2">Cycle {ue.ue.cycle}</td>
-                        <td className="px-4 py-2">
+                        <td className="p-3">Cycle {ue.ue.cycle}</td>
+                        <td className="p-3">
                           {new Date(ue.start_date).toLocaleDateString()}
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="p-3">
                           {new Date(ue.end_date).toLocaleDateString()}
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="p-3">
                           {ue.professor
                             ? `${ue.professor.contactDetails.firstName} ${ue.professor.contactDetails.lastName}`
                             : "N/A"}
                         </td>
-                        <td className="px-4 py-2">
-                          <div className="flex space-x-2">
-                            <Link
-                              href={`/academics-ue/lessons/${ue.id}`}
-                              className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                            >
-                              Gérer les leçons
+                        <td className="p-3">
+                          <div className="flex justify-end space-x-2">
+                            <Link href={`/academics-ue/lessons/${ue.id}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
+                              >
+                                <Calendar className="h-4 w-4 mr-1" />
+                                Leçons
+                              </Button>
                             </Link>
-                            <Link
-                              href={`/academics-ue/results/${ue.id}`}
-                              className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
-                            >
-                              Gérer les résultats
+                            <Link href={`/academics-ue/results/${ue.id}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700"
+                              >
+                                <GraduationCap className="h-4 w-4 mr-1" />
+                                Résultats
+                              </Button>
                             </Link>
-                            <Link
-                              href={`/academics-ue/register/${ue.id}`}
-                              className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
-                            >
-                              Gérer les inscriptions
+                            <Link href={`/academics-ue/register/${ue.id}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700"
+                              >
+                                <Users className="h-4 w-4 mr-1" />
+                                Inscriptions
+                              </Button>
                             </Link>
                           </div>
                         </td>
@@ -304,24 +470,31 @@ export default function AcademicsUEPage({
                   </tbody>
                 </table>
               </div>
-              <PaginationComponent
-                totalPages={academicsData.total_pages}
-                currentPage={academicsData.page}
-                search={searchInput}
-                onPageChange={(page) => {
-                  const params = {
-                    name: searchInput,
-                    page,
-                    section_id: section === "all" ? undefined : section,
-                    cycle: cycle === "all" ? undefined : cycle,
-                    active_only: activeOnly ? "true" : undefined,
-                  };
-                  router.push(createUrlWithParams("/academics-ue", params));
-                }}
-              />
+              <div className="mt-4">
+                <PaginationComponent
+                  totalPages={academicsData.total_pages}
+                  currentPage={academicsData.page}
+                  search={searchInput}
+                  onPageChange={(page) => {
+                    const params = {
+                      name: searchInput,
+                      page,
+                      section_id: section === "all" ? undefined : section,
+                      cycle: cycle === "all" ? undefined : cycle,
+                      year: year,
+                      active_only: activeOnly ? "true" : undefined,
+                    };
+                    router.push(createUrlWithParams("/academics-ue", params));
+                  }}
+                />
+              </div>
             </>
           ) : (
-            <p className="mt-2 text-sm text-gray-500">Aucune UE disponible</p>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                Aucune UE académique disponible
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
