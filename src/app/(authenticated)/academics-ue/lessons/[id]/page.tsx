@@ -31,7 +31,6 @@ interface AcademicUE {
 
 export default function LessonsPage() {
   const params = useParams();
-  const router = useRouter();
   const [academicUE, setAcademicUE] = useState<AcademicUE | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,8 +54,13 @@ export default function LessonsPage() {
   const updateLessonStatus = async (lessonId: number, newStatus: string) => {
     try {
       setError(null);
+      const lesson = academicUE?.lessons.find((l) => l.id === lessonId);
+      if (!lesson) {
+        throw new Error("Leçon non trouvée");
+      }
       const response = await patch(`/ue-management/lessons/${lessonId}/`, {
         status: newStatus,
+        lesson_date: lesson.lesson_date,
       });
       if (response.success) {
         getAcademicUE(); // Recharger les données
