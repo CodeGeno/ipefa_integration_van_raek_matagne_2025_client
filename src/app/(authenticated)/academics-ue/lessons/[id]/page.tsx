@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { get, patch } from "@/app/fetch";
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
+import { ArrowLeft, ArrowUpDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,10 @@ export default function LessonsPage() {
   const params = useParams();
   const [academicUE, setAcademicUE] = useState<AcademicUE | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Lesson;
+    direction: "asc" | "desc";
+  } | null>(null);
 
   const getAcademicUE = async () => {
     try {
@@ -40,7 +45,7 @@ export default function LessonsPage() {
       const response = await get<AcademicUE>(
         `/ue-management/academic-ues/${params.id}/`
       );
-      if (response.success) {
+      if (response.success && response.data) {
         setAcademicUE(response.data);
       } else {
         throw new Error("Erreur lors du chargement des données");
@@ -92,6 +97,49 @@ export default function LessonsPage() {
     }
   };
 
+  const sortLessons = (lessons: Lesson[]) => {
+    if (!sortConfig) return lessons;
+
+    return [...lessons].sort((a, b) => {
+      if (sortConfig.key === "lesson_date") {
+        const dateA = new Date(a.lesson_date).getTime();
+        const dateB = new Date(b.lesson_date).getTime();
+        return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
+      }
+
+      if (a[sortConfig.key] < b[sortConfig.key]) {
+        return sortConfig.direction === "asc" ? -1 : 1;
+      }
+      if (a[sortConfig.key] > b[sortConfig.key]) {
+        return sortConfig.direction === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  const requestSort = (key: keyof Lesson) => {
+    let direction: "asc" | "desc" = "asc";
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (column: keyof Lesson) => {
+    if (!sortConfig || sortConfig.key !== column) {
+      return <ArrowUpDown className="h-4 w-4 ml-1" />;
+    }
+    return sortConfig.direction === "asc" ? (
+      <ArrowUpDown className="h-4 w-4 ml-1" />
+    ) : (
+      <ArrowUpDown className="h-4 w-4 ml-1" />
+    );
+  };
+
   if (!academicUE) {
     return (
       <div className="container mx-auto p-4">
@@ -108,9 +156,15 @@ export default function LessonsPage() {
     <div className="container mx-auto p-4">
       <Card>
         <CardHeader>
-          <CardTitle>
-            Gestion des leçons - {academicUE.ue.name} ({academicUE.year})
-          </CardTitle>
+          <div className="flex flex-col gap-4">
+            <Link href="/academics-ue">
+              <Button variant="outline" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Retour à la liste des UE
+              </Button>
+            </Link>
+            <CardTitle>Détails des leçons</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           {error && (
@@ -123,11 +177,23 @@ export default function LessonsPage() {
             <table className="min-w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                    Date
+                  <th
+                    className="px-4 py-2 text-left text-sm font-medium text-gray-500 cursor-pointer hover:bg-gray-100"
+                    onClick={() => requestSort("lesson_date")}
+                  >
+                    <div className="flex items-center">
+                      Date
+                      {getSortIcon("lesson_date")}
+                    </div>
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                    Statut
+                  <th
+                    className="px-4 py-2 text-left text-sm font-medium text-gray-500 cursor-pointer hover:bg-gray-100"
+                    onClick={() => requestSort("status")}
+                  >
+                    <div className="flex items-center">
+                      Statut
+                      {getSortIcon("status")}
+                    </div>
                   </th>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
                     Actions
@@ -135,7 +201,7 @@ export default function LessonsPage() {
                 </tr>
               </thead>
               <tbody>
-                {academicUE.lessons.map((lesson) => (
+                {sortLessons(academicUE.lessons).map((lesson) => (
                   <tr key={lesson.id} className="border-t">
                     <td className="px-4 py-2">
                       {new Date(lesson.lesson_date).toLocaleDateString()}
@@ -167,12 +233,6 @@ export default function LessonsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-
-          <div className="mt-6 flex justify-end">
-            <Link href="/academics-ue">
-              <Button variant="outline">Retour à la liste des UE</Button>
-            </Link>
           </div>
         </CardContent>
       </Card>

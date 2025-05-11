@@ -286,14 +286,13 @@ export default function CreateAcademicUEPage() {
   return (
     <div className="container mx-auto p-4">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <Link
-              href="/academics-ue"
-              className="flex items-center text-sm text-gray-500 mb-2"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Retour à la liste
+        <CardHeader>
+          <div className="flex flex-col gap-4">
+            <Link href="/academics-ue">
+              <Button variant="outline" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Retour à la liste des UE
+              </Button>
             </Link>
             <CardTitle>Créer une nouvelle UE académique</CardTitle>
           </div>
