@@ -6,7 +6,14 @@ import Link from "next/link";
 import { get, patch } from "@/app/fetch";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ArrowUpDown } from "lucide-react";
+import {
+	ArrowLeft,
+	ArrowUpDown,
+	ChevronLeft,
+	ChevronRight,
+	Calendar as CalendarIcon,
+	Clock,
+} from "lucide-react";
 import {
 	Select,
 	SelectContent,
@@ -14,6 +21,16 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogFooter,
+} from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Lesson {
 	id: number;
@@ -30,14 +47,35 @@ interface AcademicUE {
 	lessons: Lesson[];
 }
 
+const statusStyles = {
+	PROGRAMMED: "bg-blue-50 text-blue-700 border-blue-200",
+	COMPLETED: "bg-green-50 text-green-700 border-green-200",
+	CANCELLED: "bg-red-50 text-red-700 border-red-200",
+	REPORTED: "bg-yellow-50 text-yellow-700 border-yellow-200",
+};
+
+const statusLabels = {
+	PROGRAMMED: "Programmé",
+	COMPLETED: "Terminé",
+	CANCELLED: "Annulé",
+	REPORTED: "Reporté",
+};
+
 export default function LessonsPage() {
 	const params = useParams();
 	const [academicUE, setAcademicUE] = useState<AcademicUE | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [currentPage, setCurrentPage] = useState(1);
+	const itemsPerPage = 10;
 	const [sortConfig, setSortConfig] = useState<{
 		key: keyof Lesson;
 		direction: "asc" | "desc";
-	} | null>(null);
+	}>({ key: "lesson_date", direction: "asc" });
+	const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+	const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+	const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+		undefined
+	);
 
 	const getAcademicUE = async () => {
 		try {
@@ -56,7 +94,11 @@ export default function LessonsPage() {
 		}
 	};
 
-	const updateLessonStatus = async (lessonId: number, newStatus: string) => {
+	const updateLessonStatus = async (
+		lessonId: number,
+		newStatus: string,
+		newDate?: string
+	) => {
 		try {
 			setError(null);
 			const lesson = academicUE?.lessons.find((l) => l.id === lessonId);
@@ -67,11 +109,12 @@ export default function LessonsPage() {
 				`/ue-management/lessons/${lessonId}/`,
 				{
 					status: newStatus,
-					lesson_date: lesson.lesson_date,
+					lesson_date: newDate || lesson.lesson_date,
 				}
 			);
 			if (response.success) {
 				getAcademicUE(); // Recharger les données
+				setSortConfig({ key: "lesson_date", direction: "asc" });
 			} else {
 				throw new Error("Erreur lors de la mise à jour du statut");
 			}
@@ -228,7 +271,9 @@ export default function LessonsPage() {
 														lesson.status
 													)}
 												>
-													{lesson.status}
+													{statusLabels[
+														lesson.status as keyof typeof statusLabels
+													] || lesson.status}
 												</span>
 											</td>
 											<td className="px-4 py-2">

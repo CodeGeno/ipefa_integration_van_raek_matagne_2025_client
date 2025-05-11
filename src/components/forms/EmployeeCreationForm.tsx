@@ -11,169 +11,172 @@ import { PersonalInfoForm } from "./PersonalInfoForm";
 import { AddressForm } from "./AddressForm";
 import { format } from "date-fns";
 import {
-	employeeSchema,
-	EmployeeFormData,
+  employeeSchema,
+  EmployeeFormData,
 } from "@/model/schema/employee.schema";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { post } from "@/app/fetch";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { BadgeCheck, Loader2, Shield } from "lucide-react";
 
 export const EmployeeCreationForm: React.FC = () => {
-	const [isSubmitting, setIsSubmitting] = useState(false);
-	const router = useRouter();
-	const form = useForm<EmployeeFormData>({
-		resolver: zodResolver(employeeSchema),
-		defaultValues: {
-			role: undefined,
-			contactDetails: {
-				firstName: "",
-				lastName: "",
-				birthDate: new Date(),
-				gender: undefined,
-				phoneNumber: "",
-			},
-			address: {
-				street: "123 rue de la paix ",
-				number: "123",
-				complement: "app 123",
-				zipCode: "123456",
-				city: "Paris",
-				state: "Île-de-France",
-				country: "France",
-			},
-		},
-	});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+  const form = useForm<EmployeeFormData>({
+    resolver: zodResolver(employeeSchema),
+    defaultValues: {
+      role: undefined,
+      contactDetails: {
+        firstName: "",
+        lastName: "",
+        birthDate: new Date(),
+        gender: undefined,
+        phoneNumber: "",
+      },
+      address: {
+        street: "",
+        number: "",
+        complement: "",
+        zipCode: "",
+        city: "",
+        state: "",
+        country: "",
+      },
+    },
+  });
 
-	useEffect(() => {
-		if (process.env.NODE_ENV === "development")
-			if (Object.keys(form.formState.errors).length > 0) {
-				console.log("Erreurs de validation:", form.formState.errors);
-			}
-	}, [form.formState.errors]);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development")
+      if (Object.keys(form.formState.errors).length > 0) {
+        console.log("Erreurs de validation:", form.formState.errors);
+      }
+  }, [form.formState.errors]);
 
-	const onSubmit = async (data: EmployeeFormData) => {
-		setIsSubmitting(true);
+  const onSubmit = async (data: EmployeeFormData) => {
+    setIsSubmitting(true);
 
-		try {
-			// Convertir les données en snake_case pour le backend
-			let formattedData = {
-				...data,
-				contactDetails: {
-					...data.contactDetails,
-					birthDate: format(
-						data.contactDetails.birthDate,
-						"yyyy-MM-dd"
-					),
-				},
-			};
+    try {
+      let formattedData = {
+        ...data,
+        contactDetails: {
+          ...data.contactDetails,
+          birthDate: format(data.contactDetails.birthDate, "yyyy-MM-dd"),
+        },
+      };
 
-			// Utiliser un chemin relatif pour l'API
-			const response = await post(
-				"/security/create-employee/",
-				formattedData
-			);
+      const response = await post("/security/create-employee/", formattedData);
 
-			if (response.success !== true) {
-				toast({
-					title: "Erreur",
-					description: response.message,
-					variant: "destructive",
-				});
-				return;
-			} else {
-				// Afficher un message de succès
-				toast({
-					title: "Succès",
-					description: "Le compte employé a été créé avec succès",
-				});
+      if (response.success !== true) {
+        toast({
+          title: "Erreur",
+          description: response.message,
+          variant: "destructive",
+        });
+        return;
+      } else {
+        toast({
+          title: "Succès",
+          description: "Le compte employé a été créé avec succès",
+        });
 
-				setTimeout(() => {
-					router.push("/employee/list");
-				}, 3000);
-			}
-		} catch (error) {
-			console.error("Erreur:", error);
-			toast({
-				title: "Erreur",
-				description:
-					error instanceof Error
-						? error.message
-						: "Une erreur est survenue lors de la création du compte",
-				variant: "destructive",
-			});
-		} finally {
-			setIsSubmitting(false);
-		}
-	};
+        setTimeout(() => {
+          router.push("/employee/list");
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast({
+        title: "Erreur",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Une erreur est survenue lors de la création du compte",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-	return (
-		<div className="flex flex-col  align-center container  py-8 w-full">
-			<CardHeader>
-				<CardTitle className="text-center text-2xl">
-					Création d'un compte employé
-				</CardTitle>
-			</CardHeader>
-			<CardContent>
-				<Form {...form}>
-					<form
-						onSubmit={form.handleSubmit(onSubmit)}
-						className="space-y-6"
-					>
-						<Select
-							onValueChange={(value) =>
-								form.setValue("role", value as AccountRoleEnum)
-							}
-							defaultValue={AccountRoleEnum.EDUCATOR}
-						>
-							<SelectTrigger>
-								<SelectValue placeholder="Sélectionnez un rôle" />
-							</SelectTrigger>
-							<SelectContent>
-								{Object.keys(AccountRoleEnum)
-									.filter((r) => r !== "STUDENT")
-									.map((role) => {
-										const roleKey =
-											role as keyof typeof AccountRoleEnum;
-										return (
-											<SelectItem
-												key={role}
-												value={role}
-											>
-												{AccountRoleEnum[roleKey]}
-											</SelectItem>
-										);
-									})}
-							</SelectContent>
-						</Select>
+  return (
+    <Card className="border-none shadow-lg">
+      <CardContent className="p-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <Card>
+              <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Rôle de l&apos;employé
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <Select
+                  onValueChange={(value) =>
+                    form.setValue("role", value as AccountRoleEnum)
+                  }
+                  defaultValue={AccountRoleEnum.EDUCATOR}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez un rôle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(AccountRoleEnum)
+                      .filter((r) => r !== "STUDENT")
+                      .map((role) => {
+                        const roleKey = role as keyof typeof AccountRoleEnum;
+                        return (
+                          <SelectItem key={role} value={role}>
+                            {AccountRoleEnum[roleKey]}
+                          </SelectItem>
+                        );
+                      })}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
 
-						<PersonalInfoForm
-							control={form.control}
-							isEditing={false}
-						/>
+            <PersonalInfoForm control={form.control} isEditing={false} />
+            <AddressForm control={form.control} />
 
-						<AddressForm control={form.control} />
-						<div className="flex justify-center">
-							<Button
-								type="submit"
-								size="lg"
-								disabled={isSubmitting}
-							>
-								{form.formState.isValid
-									? "Créer le compte"
-									: "Veuillez remplir tous les champs"}
-								{}
-							</Button>
-						</div>
-					</form>
-				</Form>
-			</CardContent>
-		</div>
-	);
+            <div className="flex justify-end gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/employee/list")}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || !form.formState.isValid}
+                className="min-w-[200px]"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Création en cours...
+                  </>
+                ) : form.formState.isValid ? (
+                  <>
+                    <BadgeCheck className="mr-2 h-4 w-4" />
+                    Créer l&apos;employé
+                  </>
+                ) : (
+                  "Veuillez remplir tous les champs"
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
 };
