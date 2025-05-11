@@ -2,7 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { get } from "@/app/fetch";
+import { getPaginated } from "@/app/fetch";
 import { useState, useEffect } from "react";
 import { Employee } from "@/model/entity/lessons/employee.entity";
 import { UE } from "@/model/entity/ue/ue.entity";
@@ -14,6 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
+import { createUrlWithParams } from "@/utils/url";
+import { ApiPaginatedResponse } from "@/model/api/api.response";
+import PaginationComponent from "@/components/pagination-component";
 
 interface AcademicUE {
   id: number;
@@ -29,15 +36,35 @@ interface AcademicUE {
   }[];
 }
 
-export default function AcademicsUEPage() {
-  const [academicsData, setAcademicsData] = useState<AcademicUE[]>([]);
+export default function AcademicsUEPage({
+  url,
+  searchValue,
+  sectionValue,
+  cycleValue,
+  activeOnlyValue,
+}: {
+  url: string;
+  searchValue: string;
+  sectionValue: string;
+  cycleValue: string;
+  activeOnlyValue: string;
+}) {
+  const [academicsData, setAcademicsData] =
+    useState<ApiPaginatedResponse<AcademicUE[]>>();
   const [sections, setSections] = useState<Section[]>([]);
-  const [selectedSection, setSelectedSection] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  const [searchInput, setSearchInput] = useState<string>(searchValue ?? "");
+  const [section, setSection] = useState<string>(sectionValue || "all");
+  const [cycle, setCycle] = useState<string>(cycleValue || "all");
+  const [activeOnly, setActiveOnly] = useState<boolean>(
+    activeOnlyValue === "true"
+  );
 
   const getSections = async () => {
     try {
-      const response = await get<Section[]>("/section/list/");
+      const response = await getPaginated<Section[]>("/section/list/");
       if (response.success && response.data) {
         setSections(response.data);
       }
@@ -50,21 +77,26 @@ export default function AcademicsUEPage() {
   const getAcademicUEs = async () => {
     try {
       setError(null);
-      console.log("Fetching academic UEs");
-      const url =
-        selectedSection !== "all"
-          ? `/ue-management/academic-ues/?section_id=${selectedSection}`
-          : "/ue-management/academic-ues/";
-      const response = await get<AcademicUE[]>(url);
+      const params = new URLSearchParams();
 
-      if (!response.success) {
-        throw new Error(`Error fetching data: ${response.status}`);
+      if (searchInput) params.append("name", searchInput);
+      if (section !== "all") params.append("section_id", section);
+      if (cycle !== "all") params.append("cycle", cycle);
+      if (activeOnly) params.append("active_only", "true");
+
+      const queryString = params.toString();
+      const apiUrl = `/ue-management/academic-ues/${
+        queryString ? `?${queryString}` : ""
+      }`;
+
+      const response = await getPaginated<AcademicUE[]>(apiUrl);
+
+      if (response.success) {
+        setAcademicsData(response);
       }
-      console.log(response.data);
-      setAcademicsData(response.data as AcademicUE[]);
     } catch (error) {
       console.error("Failed to fetch academic UEs:", error);
-      setError("Erreur lors du chargement des UE académiques");
+      setError("Erreur lors du chargement des UEs académiques");
     }
   };
 
@@ -74,59 +106,120 @@ export default function AcademicsUEPage() {
 
   useEffect(() => {
     getAcademicUEs();
-  }, [selectedSection]);
+  }, [url, searchInput, section, cycle, activeOnly]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "PROGRAMMED":
-        return "text-blue-600";
-      case "IN_PROGRESS":
-        return "text-yellow-600";
-      case "COMPLETED":
-        return "text-green-600";
-      case "CANCELLED":
-        return "text-red-600";
-      default:
-        return "text-gray-600";
-    }
+  const handleSearch = async () => {
+    const searchParams = {
+      name: searchInput,
+      section_id: section === "all" ? undefined : section,
+      cycle: cycle === "all" ? undefined : cycle,
+      active_only: activeOnly ? "true" : undefined,
+    };
+    await router.push(createUrlWithParams("/academics-ue", searchParams));
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "PROGRAMMED":
-        return "Programmé";
-      case "COMPLETED":
-        return "Terminé";
-      case "CANCELLED":
-        return "Annulé";
-      default:
-        return status;
-    }
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") await handleSearch();
+  };
+
+  const handleFilter = async () => {
+    const filterParams = {
+      name: searchInput,
+      page: 1,
+      section_id: section === "all" ? undefined : section,
+      cycle: cycle === "all" ? undefined : cycle,
+      active_only: activeOnly ? "true" : undefined,
+    };
+    await router.push(createUrlWithParams("/academics-ue", filterParams));
+  };
+
+  const handleReset = async () => {
+    setSearchInput("");
+    setSection("all");
+    setCycle("all");
+    setActiveOnly(false);
+    await router.push("/academics-ue");
   };
 
   return (
     <div className="container mx-auto p-4">
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle className="flex gap-4 items-center">
             Gestion des UE Académiques - Année {new Date().getFullYear()}
+            <Link href="academics-ue/create">
+              <Button variant="outline">+ Ajouter UE Académique</Button>
+            </Link>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
-            <Select value={selectedSection} onValueChange={setSelectedSection}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filtrer par section" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les sections</SelectItem>
-                {sections.map((section) => (
-                  <SelectItem key={section.id} value={section.id.toString()}>
-                    {section.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-4 sm:px-0">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex flex-col flex-1 gap-2">
+                <Label>Nom de l&apos;UE</Label>
+                <Input
+                  placeholder="Rechercher une UE..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+              </div>
+
+              <div className="flex flex-col flex-1 gap-2">
+                <Label>Section</Label>
+                <Select value={section} onValueChange={setSection}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez une section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les sections</SelectItem>
+                    {sections.map((section) => (
+                      <SelectItem
+                        key={section.id}
+                        value={section.id.toString()}
+                      >
+                        {section.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col flex-1 gap-2">
+                <Label>Cycle</Label>
+                <Select value={cycle} onValueChange={setCycle}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisissez un cycle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les cycles</SelectItem>
+                    <SelectItem value="1">Cycle 1</SelectItem>
+                    <SelectItem value="2">Cycle 2</SelectItem>
+                    <SelectItem value="3">Cycle 3</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-end space-x-2">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="active-filter"
+                    checked={activeOnly}
+                    onCheckedChange={setActiveOnly}
+                  />
+                  <Label htmlFor="active-filter">UEs actives uniquement</Label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex w-full py-4 gap-4">
+            <Button className="w-full" onClick={handleFilter}>
+              Filtrer
+            </Button>
+            <Button variant="outline" className="w-full" onClick={handleReset}>
+              Réinitialiser les filtres
+            </Button>
           </div>
 
           {error && (
@@ -135,90 +228,101 @@ export default function AcademicsUEPage() {
             </div>
           )}
 
-          {academicsData.length > 0 ? (
-            <div className="mt-2 border rounded-md overflow-hidden">
-              <table className="min-w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                      ID
-                    </th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                      Nom
-                    </th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                      Date de début
-                    </th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                      Date de fin
-                    </th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                      Professeur
-                    </th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                      Section
-                    </th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {academicsData.map((ue) => (
-                    <tr key={ue.id} className="border-t">
-                      <td className="px-4 py-2">{ue.id}</td>
-                      <td className="px-4 py-2">{ue.ue.name}</td>
-                      <td className="px-4 py-2">
-                        {new Date(ue.start_date).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-2">
-                        {new Date(ue.end_date).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-2">
-                        {ue.professor
-                          ? `${ue.professor.contactDetails.firstName} ${ue.professor.contactDetails.lastName}`
-                          : "N/A"}
-                      </td>
-                      <td className="px-4 py-2">{ue.ue.section}</td>
-                      <td className="px-4 py-2">
-                        <div className="flex space-x-2">
-                          <Link
-                            href={`/academics-ue/lessons/${ue.id}`}
-                            className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                          >
-                            Gérer les leçons
-                          </Link>
-                          <Link
-                            href={`/academics-ue/results/${ue.id}`}
-                            className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
-                          >
-                            Gérer les résultats
-                          </Link>
-                          <Link
-                            href={`/academics-ue/register/${ue.id}`}
-                            className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
-                          >
-                            Gérer les inscriptions
-                          </Link>
-                        </div>
-                      </td>
+          {academicsData && academicsData.data.length > 0 ? (
+            <>
+              <div className="mt-2 border rounded-md overflow-hidden">
+                <table className="min-w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Nom
+                      </th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Section
+                      </th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Cycle
+                      </th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Date de début
+                      </th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Date de fin
+                      </th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Professeur
+                      </th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {academicsData.data.map((ue) => (
+                      <tr key={ue.id} className="border-t">
+                        <td className="px-4 py-2">{ue.ue.name}</td>
+                        <td className="px-4 py-2">
+                          {sections.find((s) => s.id === ue.ue.section)?.name ||
+                            "N/A"}
+                        </td>
+                        <td className="px-4 py-2">Cycle {ue.ue.cycle}</td>
+                        <td className="px-4 py-2">
+                          {new Date(ue.start_date).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-2">
+                          {new Date(ue.end_date).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-2">
+                          {ue.professor
+                            ? `${ue.professor.contactDetails.firstName} ${ue.professor.contactDetails.lastName}`
+                            : "N/A"}
+                        </td>
+                        <td className="px-4 py-2">
+                          <div className="flex space-x-2">
+                            <Link
+                              href={`/academics-ue/lessons/${ue.id}`}
+                              className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                            >
+                              Gérer les leçons
+                            </Link>
+                            <Link
+                              href={`/academics-ue/results/${ue.id}`}
+                              className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+                            >
+                              Gérer les résultats
+                            </Link>
+                            <Link
+                              href={`/academics-ue/register/${ue.id}`}
+                              className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
+                            >
+                              Gérer les inscriptions
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <PaginationComponent
+                totalPages={academicsData.total_pages}
+                currentPage={academicsData.page}
+                search={searchInput}
+                onPageChange={(page) => {
+                  const params = {
+                    name: searchInput,
+                    page,
+                    section_id: section === "all" ? undefined : section,
+                    cycle: cycle === "all" ? undefined : cycle,
+                    active_only: activeOnly ? "true" : undefined,
+                  };
+                  router.push(createUrlWithParams("/academics-ue", params));
+                }}
+              />
+            </>
           ) : (
             <p className="mt-2 text-sm text-gray-500">Aucune UE disponible</p>
           )}
-
-          <div className="mt-6 flex justify-end space-x-4">
-            <Link href="academics-ue/create">
-              <Button variant="outline">Créer une nouvelle UE</Button>
-            </Link>
-            <Link href="academics-ue/">
-              <Button variant="outline">Retour à la liste des UE</Button>
-            </Link>
-          </div>
         </CardContent>
       </Card>
     </div>
