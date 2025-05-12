@@ -20,7 +20,22 @@ import { get, post } from "@/app/fetch";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Save } from "lucide-react";
+import { ArrowLeft, BookOpen, Save, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Check, ChevronsUpDown } from "lucide-react";
 
 // Define schema with Zod
 const ueSchema = z.object({
@@ -54,6 +69,8 @@ const ueSchema = z.object({
     .int("Le nombre de périodes doit être un nombre entier")
     .min(1, "Le nombre de périodes doit être positif")
     .max(500, "Le nombre de périodes ne peut pas dépasser 500"),
+
+  prerequisites: z.array(z.number()).default([]),
 });
 
 // Infer the TypeScript type from the schema
@@ -63,6 +80,12 @@ const UECreatePage = () => {
   const router = useRouter();
   const [sections, setSections] = useState<Section[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [availableUEs, setAvailableUEs] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [selectedPrerequisites, setSelectedPrerequisites] = useState<number[]>(
+    []
+  );
 
   // Use zodResolver to connect zod schema to react-hook-form
   const {
@@ -103,6 +126,25 @@ const UECreatePage = () => {
     fetchSections();
   }, []);
 
+  const handleSectionChange = async (sectionId: string) => {
+    setValue("sectionId", sectionId);
+    try {
+      const response = await get<Section>(`/section/${sectionId}/`);
+      if (response.success && response.data.ues) {
+        // Filtrer uniquement les UEs actives
+        const activeUEs = response.data.ues.filter((ue) => ue.isActive);
+        setAvailableUEs(
+          activeUEs.map((ue) => ({
+            id: ue.id,
+            name: ue.name,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error loading UEs:", error);
+    }
+  };
+
   const onSubmit = async (data: UEFormData) => {
     try {
       const response = await post("/ue/create/", {
@@ -112,6 +154,7 @@ const UECreatePage = () => {
         isActive: data.isActive,
         cycle: data.cycle,
         periods: data.periods,
+        prerequisites: selectedPrerequisites,
       });
 
       if (response.success) {
@@ -130,10 +173,6 @@ const UECreatePage = () => {
         variant: "destructive",
       });
     }
-  };
-
-  const handleSectionChange = (value: string) => {
-    setValue("sectionId", value);
   };
 
   return (
@@ -254,12 +293,84 @@ const UECreatePage = () => {
                   </p>
                 )}
               </div>
+
+              <div>
+                <Label htmlFor="prerequisites">Prérequis</Label>
+                <div className="relative">
+                  <Select
+                    onValueChange={(value) => {
+                      const id = parseInt(value);
+                      if (!selectedPrerequisites.includes(id)) {
+                        setSelectedPrerequisites([
+                          ...selectedPrerequisites,
+                          id,
+                        ]);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner des prérequis" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableUEs.length > 0 ? (
+                        availableUEs
+                          .filter(
+                            (ue) => !selectedPrerequisites.includes(ue.id)
+                          )
+                          .map((ue) => (
+                            <SelectItem
+                              key={ue.id.toString()}
+                              value={ue.id.toString()}
+                            >
+                              {ue.name}
+                            </SelectItem>
+                          ))
+                      ) : (
+                        <SelectItem value="none" disabled>
+                          {selectedPrerequisites.length > 0
+                            ? "Toutes les UEs sont déjà sélectionnées"
+                            : "Sélectionnez d'abord une section"}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+
+                  {selectedPrerequisites.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {selectedPrerequisites.map((id) => {
+                        const ue = availableUEs.find((u) => u.id === id);
+                        return (
+                          <div
+                            key={id}
+                            className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
+                          >
+                            {ue?.name}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-4 w-4 p-0 hover:bg-transparent"
+                              onClick={() => {
+                                setSelectedPrerequisites(
+                                  selectedPrerequisites.filter((p) => p !== id)
+                                );
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-end">
               <Button type="submit" className="flex items-center gap-2">
                 <Save className="h-4 w-4" />
-                Enregistrer
+                Créer l'UE
               </Button>
             </div>
           </form>

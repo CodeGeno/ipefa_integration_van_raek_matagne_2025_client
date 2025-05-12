@@ -155,7 +155,7 @@ const StudentDetailsPage = () => {
                       <span className="text-sm font-medium">Matricule</span>
                     </div>
                     <p className="text-lg">
-                      {student?.contactDetails?.identifier || "Non spécifié"}
+                      {student?.identifier || "Non spécifié"}
                     </p>
                   </div>
                 </div>

@@ -158,49 +158,22 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
             </FormItem>
           )}
         />
-        {isEditing ? (
-          <div className="md:col-span-2">
-            <FormLabel>Matricule</FormLabel>
-            <div className="w-full pl-3 text-left font-normal border rounded-md p-2 bg-muted text-muted-foreground">
-              {control._formValues.contactDetails.identifier || "Non spécifié"}
+        {isEditing && (
+          <>
+            <div className="md:col-span-2">
+              <FormLabel>Matricule</FormLabel>
+              <div className="w-full pl-3 text-left font-normal border rounded-md p-2 bg-muted text-muted-foreground">
+                {control._formValues.contactDetails.identifier ||
+                  "Non spécifié"}
+              </div>
             </div>
-          </div>
-        ) : (
-          <FormField
-            control={control}
-            name="contactDetails.identifier"
-            render={({ field }) => (
-              <FormItem className="md:col-span-2">
-                <FormLabel>Matricule</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-        {isEditing ? (
-          <div className="md:col-span-2">
-            <FormLabel>Email</FormLabel>
-            <div className="w-full pl-3 text-left font-normal border rounded-md p-2 bg-muted text-muted-foreground">
-              {control._formValues.email || "Non spécifié"}
+            <div className="md:col-span-2">
+              <FormLabel>Email</FormLabel>
+              <div className="w-full pl-3 text-left font-normal border rounded-md p-2 bg-muted text-muted-foreground">
+                {control._formValues.email || "Non spécifié"}
+              </div>
             </div>
-          </div>
-        ) : (
-          <FormField
-            control={control}
-            name="email"
-            render={({ field }) => (
-              <FormItem className="md:col-span-2">
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input {...field} type="email" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          </>
         )}
       </div>
     </div>

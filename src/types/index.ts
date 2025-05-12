@@ -5,7 +5,6 @@ export interface ContactDetails {
   phoneNumber: string;
   birthDate: string;
   gender: string;
-  identifier: string;
 }
 
 export interface Student {
@@ -56,4 +55,4 @@ export interface AcademicUE {
     status: string;
   }[];
   results: Result[];
-} 
+}

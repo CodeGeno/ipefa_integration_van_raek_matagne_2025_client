@@ -43,7 +43,6 @@ interface Professor {
     phoneNumber: string;
     birthDate: string;
     gender: string;
-    identifier: string;
   };
   address: {
     id: number;

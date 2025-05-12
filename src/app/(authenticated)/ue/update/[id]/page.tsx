@@ -24,7 +24,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Section } from "@/model/entity/ue/section.entity";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, BookOpen, GraduationCap, Clock } from "lucide-react";
+import { ArrowLeft, BookOpen, GraduationCap, Clock, X } from "lucide-react";
 import Link from "next/link";
 import { get, patch } from "@/app/fetch";
 import { toast } from "@/hooks/use-toast";
@@ -47,6 +47,17 @@ const ueUpdateSchema = z.object({
 
 type UEFormData = z.infer<typeof ueUpdateSchema>;
 
+interface ParsedUE {
+  id: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+  section: number;
+  prerequisites: { id: number; name: string }[];
+  cycle: number;
+  periods: number;
+}
+
 const UEEditPage = () => {
   const params = useParams();
   const router = useRouter();
@@ -55,6 +66,12 @@ const UEEditPage = () => {
   const [sections, setSections] = useState<Section[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [availableUEs, setAvailableUEs] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [selectedPrerequisites, setSelectedPrerequisites] = useState<
+    { id: number; name: string }[]
+  >([]);
 
   const {
     register,
@@ -100,6 +117,29 @@ const UEEditPage = () => {
               cycle: ue.cycle,
               periods: ue.periods,
             });
+            // Set initial prerequisites
+            if (ue.prerequisites && Array.isArray(ue.prerequisites)) {
+              setSelectedPrerequisites(ue.prerequisites);
+            }
+
+            // Charger les UEs disponibles pour la section actuelle
+            const sectionResponse = await get<Section>(
+              `/section/${ue.section}/`
+            );
+            if (sectionResponse.success && sectionResponse.data.ues) {
+              // Filtrer uniquement les UEs actives et exclure l'UE actuelle
+              const activeUEs = sectionResponse.data.ues.filter(
+                (sectionUE) =>
+                  sectionUE.isActive &&
+                  sectionUE.id !== parseInt(ueId as string)
+              );
+              setAvailableUEs(
+                activeUEs.map((sectionUE) => ({
+                  id: sectionUE.id,
+                  name: sectionUE.name,
+                }))
+              );
+            }
           }
         } else {
           throw new Error("Erreur lors de la récupération des données");
@@ -119,6 +159,28 @@ const UEEditPage = () => {
     }
   }, [ueId, reset]);
 
+  const handleSectionChange = async (value: string) => {
+    setValue("sectionId", value);
+    trigger("sectionId");
+    try {
+      const response = await get<Section>(`/section/${value}/`);
+      if (response.success && response.data.ues) {
+        // Filtrer uniquement les UEs actives et exclure l'UE actuelle
+        const activeUEs = response.data.ues.filter(
+          (ue) => ue.isActive && ue.id !== parseInt(ueId as string)
+        );
+        setAvailableUEs(
+          activeUEs.map((ue) => ({
+            id: ue.id,
+            name: ue.name,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error loading UEs:", error);
+    }
+  };
+
   const onSubmit = async (data: UEFormData) => {
     try {
       const response = await patch(`/ue/update/${ueId}/`, {
@@ -128,6 +190,9 @@ const UEEditPage = () => {
         isActive: data.isActive,
         cycle: data.cycle,
         periods: data.periods,
+        prerequisites: selectedPrerequisites.map((prereq) => ({
+          ueId: prereq.id,
+        })),
       });
 
       if (response.success) {
@@ -149,11 +214,6 @@ const UEEditPage = () => {
       );
       console.error("Error updating UE:", err);
     }
-  };
-
-  const handleSectionChange = (value: string) => {
-    setValue("sectionId", value);
-    trigger("sectionId");
   };
 
   const handleFieldBlur = (fieldName: keyof UEFormData) => {
@@ -359,6 +419,85 @@ const UEEditPage = () => {
                   <Label htmlFor="isActive" className="cursor-pointer">
                     UE active
                   </Label>
+                </div>
+              </div>
+
+              {/* Prérequis */}
+              <div className="space-y-2">
+                <Label htmlFor="prerequisites">Prérequis</Label>
+                <div className="relative">
+                  <Select
+                    onValueChange={(value) => {
+                      const id = parseInt(value);
+                      const selectedUE = availableUEs.find(
+                        (ue) => ue.id === id
+                      );
+                      if (
+                        selectedUE &&
+                        !selectedPrerequisites.some((p) => p.id === id)
+                      ) {
+                        setSelectedPrerequisites([
+                          ...selectedPrerequisites,
+                          selectedUE,
+                        ]);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner des prérequis" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableUEs.length > 0 ? (
+                        availableUEs
+                          .filter(
+                            (ue) =>
+                              !selectedPrerequisites.some((p) => p.id === ue.id)
+                          )
+                          .map((ue) => (
+                            <SelectItem
+                              key={ue.id.toString()}
+                              value={ue.id.toString()}
+                            >
+                              {ue.name}
+                            </SelectItem>
+                          ))
+                      ) : (
+                        <SelectItem value="none" disabled>
+                          {selectedPrerequisites.length > 0
+                            ? "Toutes les UEs sont déjà sélectionnées"
+                            : "Sélectionnez d'abord une section"}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+
+                  {selectedPrerequisites.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {selectedPrerequisites.map((prereq) => (
+                        <div
+                          key={`prereq-${prereq.id}`}
+                          className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
+                        >
+                          {prereq.name}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 w-4 p-0 hover:bg-transparent"
+                            onClick={() => {
+                              setSelectedPrerequisites(
+                                selectedPrerequisites.filter(
+                                  (p) => p.id !== prereq.id
+                                )
+                              );
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

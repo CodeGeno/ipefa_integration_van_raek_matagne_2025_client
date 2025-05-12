@@ -39,6 +39,7 @@ export const EmployeeCreationForm: React.FC = () => {
         birthDate: new Date(),
         gender: undefined,
         phoneNumber: "",
+        identifier: "EMP-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
       },
       address: {
         street: "",

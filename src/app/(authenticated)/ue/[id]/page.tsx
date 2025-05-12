@@ -68,6 +68,9 @@ function UEDetailContent({ id }: { id: string }) {
   const router = useRouter();
   const [ue, setUE] = useState<ParsedUE | null>(null);
   const [section, setSection] = useState<Section | null>(null);
+  const [prerequisites, setPrerequisites] = useState<
+    { id: number; name: string }[]
+  >([]);
 
   React.useEffect(() => {
     const loadData = async () => {
@@ -76,6 +79,11 @@ function UEDetailContent({ id }: { id: string }) {
       if (ueData) {
         const sectionData = await getSection(ueData.section);
         setSection(sectionData);
+
+        // Les prérequis sont maintenant directement dans la réponse de l'UE
+        if (ueData.prerequisites && Array.isArray(ueData.prerequisites)) {
+          setPrerequisites(ueData.prerequisites);
+        }
       }
     };
     loadData();
@@ -205,13 +213,18 @@ function UEDetailContent({ id }: { id: string }) {
                 </h3>
                 <div className="mt-4">
                   <ul className="space-y-2">
-                    {ue.prerequisites.map((prereq: number) => (
+                    {prerequisites.map((prereq) => (
                       <li
-                        key={prereq}
+                        key={prereq.id}
                         className="flex items-center gap-2 text-sm"
                       >
                         <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                        UE {prereq}
+                        <Link
+                          href={`/ue/${prereq.id}`}
+                          className="hover:text-primary hover:underline"
+                        >
+                          {prereq.name}
+                        </Link>
                       </li>
                     ))}
                   </ul>

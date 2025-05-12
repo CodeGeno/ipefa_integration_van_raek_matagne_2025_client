@@ -7,312 +7,336 @@ import { get, patch } from "@/app/fetch";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import {
-	ArrowLeft,
-	ArrowUpDown,
-	ChevronLeft,
-	ChevronRight,
-	Calendar as CalendarIcon,
-	Clock,
+  ArrowLeft,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+  Clock,
 } from "lucide-react";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { addDays, isBefore, startOfDay } from "date-fns";
 
 interface Lesson {
-	id: number;
-	lesson_date: string;
-	status: string;
+  id: number;
+  lesson_date: string;
+  status: string;
 }
 
 interface AcademicUE {
-	id: number;
-	ue: {
-		name: string;
-	};
-	year: number;
-	lessons: Lesson[];
+  id: number;
+  ue: {
+    name: string;
+  };
+  year: number;
+  lessons: Lesson[];
 }
 
 const statusStyles = {
-	PROGRAMMED: "bg-blue-50 text-blue-700 border-blue-200",
-	COMPLETED: "bg-green-50 text-green-700 border-green-200",
-	CANCELLED: "bg-red-50 text-red-700 border-red-200",
-	REPORTED: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  PROGRAMMED: "bg-blue-50 text-blue-700 border-blue-200",
+  COMPLETED: "bg-green-50 text-green-700 border-green-200",
+  CANCELLED: "bg-red-50 text-red-700 border-red-200",
+  REPORTED: "bg-yellow-50 text-yellow-700 border-yellow-200",
 };
 
 const statusLabels = {
-	PROGRAMMED: "Programmé",
-	COMPLETED: "Terminé",
-	CANCELLED: "Annulé",
-	REPORTED: "Reporté",
+  PROGRAMMED: "Programmé",
+  COMPLETED: "Terminé",
+  CANCELLED: "Annulé",
+  REPORTED: "Reporté",
 };
 
 export default function LessonsPage() {
-	const params = useParams();
-	const [academicUE, setAcademicUE] = useState<AcademicUE | null>(null);
-	const [error, setError] = useState<string | null>(null);
-	const [currentPage, setCurrentPage] = useState(1);
-	const itemsPerPage = 10;
-	const [sortConfig, setSortConfig] = useState<{
-		key: keyof Lesson;
-		direction: "asc" | "desc";
-	}>({ key: "lesson_date", direction: "asc" });
-	const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-	const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-	const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-		undefined
-	);
+  const params = useParams();
+  const [academicUE, setAcademicUE] = useState<AcademicUE | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Lesson;
+    direction: "asc" | "desc";
+  }>({ key: "lesson_date", direction: "asc" });
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
-	const getAcademicUE = async () => {
-		try {
-			setError(null);
-			const response = await get<AcademicUE>(
-				`/ue-management/academic-ues/${params.id}/`
-			);
-			if (response.success && response.data) {
-				setAcademicUE(response.data);
-			} else {
-				throw new Error("Erreur lors du chargement des données");
-			}
-		} catch (error) {
-			console.error("Failed to fetch academic UE:", error);
-			setError("Erreur lors du chargement des données");
-		}
-	};
+  const getAcademicUE = async () => {
+    try {
+      setError(null);
+      const response = await get<AcademicUE>(
+        `/ue-management/academic-ues/${params.id}/`
+      );
+      if (response.success && response.data) {
+        setAcademicUE(response.data);
+      } else {
+        throw new Error("Erreur lors du chargement des données");
+      }
+    } catch (error) {
+      console.error("Failed to fetch academic UE:", error);
+      setError("Erreur lors du chargement des données");
+    }
+  };
 
-	const updateLessonStatus = async (
-		lessonId: number,
-		newStatus: string,
-		newDate?: string
-	) => {
-		try {
-			setError(null);
-			const lesson = academicUE?.lessons.find((l) => l.id === lessonId);
-			if (!lesson) {
-				throw new Error("Leçon non trouvée");
-			}
-			const response = await patch(
-				`/ue-management/lessons/${lessonId}/`,
-				{
-					status: newStatus,
-					lesson_date: newDate || lesson.lesson_date,
-				}
-			);
-			if (response.success) {
-				getAcademicUE(); // Recharger les données
-				setSortConfig({ key: "lesson_date", direction: "asc" });
-			} else {
-				throw new Error("Erreur lors de la mise à jour du statut");
-			}
-		} catch (error) {
-			console.error("Failed to update lesson status:", error);
-			setError("Erreur lors de la mise à jour du statut");
-		}
-	};
+  const updateLessonStatus = async (
+    lessonId: number,
+    newStatus: string,
+    newDate?: string
+  ) => {
+    try {
+      setError(null);
+      const lesson = academicUE?.lessons.find((l) => l.id === lessonId);
+      if (!lesson) {
+        throw new Error("Leçon non trouvée");
+      }
 
-	useEffect(() => {
-		getAcademicUE();
-	}, [params.id]);
+      if (newStatus === "REPORTED" && !newDate) {
+        setSelectedLesson(lesson);
+        setIsDatePickerOpen(true);
+        return;
+      }
 
-	const getStatusColor = (status: string) => {
-		switch (status) {
-			case "PROGRAMMED":
-				return "text-blue-600";
-			case "IN_PROGRESS":
-				return "text-yellow-600";
-			case "COMPLETED":
-				return "text-green-600";
-			case "CANCELLED":
-				return "text-red-600";
-			default:
-				return "text-gray-600";
-		}
-	};
+      const response = await patch(`/ue-management/lessons/${lessonId}/`, {
+        status: newStatus,
+        lesson_date: newDate || lesson.lesson_date,
+      });
+      if (response.success) {
+        getAcademicUE(); // Recharger les données
+        setSortConfig({ key: "lesson_date", direction: "asc" });
+        setIsDatePickerOpen(false);
+        setSelectedDate(undefined);
+      } else {
+        throw new Error("Erreur lors de la mise à jour du statut");
+      }
+    } catch (error) {
+      console.error("Failed to update lesson status:", error);
+      setError("Erreur lors de la mise à jour du statut");
+    }
+  };
 
-	const sortLessons = (lessons: Lesson[]) => {
-		if (!sortConfig) return lessons;
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    if (date && selectedLesson) {
+      updateLessonStatus(
+        selectedLesson.id,
+        "REPORTED",
+        date.toISOString().split("T")[0]
+      );
+    }
+  };
 
-		return [...lessons].sort((a, b) => {
-			if (sortConfig.key === "lesson_date") {
-				const dateA = new Date(a.lesson_date).getTime();
-				const dateB = new Date(b.lesson_date).getTime();
-				return sortConfig.direction === "asc"
-					? dateA - dateB
-					: dateB - dateA;
-			}
+  useEffect(() => {
+    getAcademicUE();
+  }, [params.id]);
 
-			if (a[sortConfig.key] < b[sortConfig.key]) {
-				return sortConfig.direction === "asc" ? -1 : 1;
-			}
-			if (a[sortConfig.key] > b[sortConfig.key]) {
-				return sortConfig.direction === "asc" ? 1 : -1;
-			}
-			return 0;
-		});
-	};
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "PROGRAMMED":
+        return "text-blue-600";
+      case "IN_PROGRESS":
+        return "text-yellow-600";
+      case "COMPLETED":
+        return "text-green-600";
+      case "CANCELLED":
+        return "text-red-600";
+      default:
+        return "text-gray-600";
+    }
+  };
 
-	const requestSort = (key: keyof Lesson) => {
-		let direction: "asc" | "desc" = "asc";
-		if (
-			sortConfig &&
-			sortConfig.key === key &&
-			sortConfig.direction === "asc"
-		) {
-			direction = "desc";
-		}
-		setSortConfig({ key, direction });
-	};
+  const sortLessons = (lessons: Lesson[]) => {
+    if (!sortConfig) return lessons;
 
-	const getSortIcon = (column: keyof Lesson) => {
-		if (!sortConfig || sortConfig.key !== column) {
-			return <ArrowUpDown className="h-4 w-4 ml-1" />;
-		}
-		return sortConfig.direction === "asc" ? (
-			<ArrowUpDown className="h-4 w-4 ml-1" />
-		) : (
-			<ArrowUpDown className="h-4 w-4 ml-1" />
-		);
-	};
+    return [...lessons].sort((a, b) => {
+      if (sortConfig.key === "lesson_date") {
+        const dateA = new Date(a.lesson_date).getTime();
+        const dateB = new Date(b.lesson_date).getTime();
+        return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
+      }
 
-	if (!academicUE) {
-		return (
-			<div className="container mx-auto p-4">
-				<Card>
-					<CardHeader>
-						<CardTitle>Chargement...</CardTitle>
-					</CardHeader>
-				</Card>
-			</div>
-		);
-	}
+      if (a[sortConfig.key] < b[sortConfig.key]) {
+        return sortConfig.direction === "asc" ? -1 : 1;
+      }
+      if (a[sortConfig.key] > b[sortConfig.key]) {
+        return sortConfig.direction === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
+  };
 
-	return (
-		<div className="container mx-auto p-4">
-			<Card>
-				<CardHeader>
-					<div className="flex flex-col gap-4">
-						<Link href="/academics-ue">
-							<Button
-								variant="outline"
-								className="flex items-center gap-2"
-							>
-								<ArrowLeft className="h-4 w-4" />
-								Retour à la liste des UE
-							</Button>
-						</Link>
-						<CardTitle>Détails des leçons</CardTitle>
-					</div>
-				</CardHeader>
-				<CardContent>
-					{error && (
-						<div className="mb-4 p-4 bg-red-50 text-red-600 rounded-md">
-							{error}
-						</div>
-					)}
+  const requestSort = (key: keyof Lesson) => {
+    let direction: "asc" | "desc" = "asc";
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
 
-					<div className="mt-2 border rounded-md overflow-hidden">
-						<table className="min-w-full">
-							<thead className="bg-gray-50">
-								<tr>
-									<th
-										className="px-4 py-2 text-left text-sm font-medium text-gray-500 cursor-pointer hover:bg-gray-100"
-										onClick={() =>
-											requestSort("lesson_date")
-										}
-									>
-										<div className="flex items-center">
-											Date
-											{getSortIcon("lesson_date")}
-										</div>
-									</th>
-									<th
-										className="px-4 py-2 text-left text-sm font-medium text-gray-500 cursor-pointer hover:bg-gray-100"
-										onClick={() => requestSort("status")}
-									>
-										<div className="flex items-center">
-											Statut
-											{getSortIcon("status")}
-										</div>
-									</th>
-									<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-										Actions
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								{sortLessons(academicUE.lessons).map(
-									(lesson) => (
-										<tr
-											key={lesson.id}
-											className="border-t"
-										>
-											<td className="px-4 py-2">
-												{new Date(
-													lesson.lesson_date
-												).toLocaleDateString()}
-											</td>
-											<td className="px-4 py-2">
-												<span
-													className={getStatusColor(
-														lesson.status
-													)}
-												>
-													{statusLabels[
-														lesson.status as keyof typeof statusLabels
-													] || lesson.status}
-												</span>
-											</td>
-											<td className="px-4 py-2">
-												<Select
-													value={lesson.status}
-													onValueChange={(value) =>
-														updateLessonStatus(
-															lesson.id,
-															value
-														)
-													}
-												>
-													<SelectTrigger className="w-[180px]">
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="PROGRAMMED">
-															Programmé
-														</SelectItem>
-														<SelectItem value="IN_PROGRESS">
-															En cours
-														</SelectItem>
-														<SelectItem value="COMPLETED">
-															Terminé
-														</SelectItem>
-														<SelectItem value="CANCELLED">
-															Annulé
-														</SelectItem>
-													</SelectContent>
-												</Select>
-											</td>
-										</tr>
-									)
-								)}
-							</tbody>
-						</table>
-					</div>
-				</CardContent>
-			</Card>
-		</div>
-	);
+  const getSortIcon = (column: keyof Lesson) => {
+    if (!sortConfig || sortConfig.key !== column) {
+      return <ArrowUpDown className="h-4 w-4 ml-1" />;
+    }
+    return sortConfig.direction === "asc" ? (
+      <ArrowUpDown className="h-4 w-4 ml-1" />
+    ) : (
+      <ArrowUpDown className="h-4 w-4 ml-1" />
+    );
+  };
+
+  if (!academicUE) {
+    return (
+      <div className="container mx-auto p-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Chargement...</CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto py-8 px-4">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-4">
+            <Link href="/academics-ue">
+              <Button variant="outline" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Retour à la liste des UE
+              </Button>
+            </Link>
+            <CardTitle>Détails des leçons</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-md">
+              {error}
+            </div>
+          )}
+
+          <div className="mt-2 border rounded-md overflow-hidden">
+            <table className="min-w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th
+                    className="px-4 py-2 text-left text-sm font-medium text-gray-500 cursor-pointer hover:bg-gray-100"
+                    onClick={() => requestSort("lesson_date")}
+                  >
+                    <div className="flex items-center">
+                      Date
+                      {getSortIcon("lesson_date")}
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-2 text-left text-sm font-medium text-gray-500 cursor-pointer hover:bg-gray-100"
+                    onClick={() => requestSort("status")}
+                  >
+                    <div className="flex items-center">
+                      Statut
+                      {getSortIcon("status")}
+                    </div>
+                  </th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {academicUE?.lessons &&
+                  sortLessons(academicUE.lessons).map((lesson) => (
+                    <tr key={lesson.id} className="border-t">
+                      <td className="px-4 py-2">
+                        {new Date(lesson.lesson_date).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-2">
+                        <span
+                          className={cn(
+                            "px-3 py-1 rounded-full text-sm font-medium",
+                            statusStyles[
+                              lesson.status as keyof typeof statusStyles
+                            ]
+                          )}
+                        >
+                          {statusLabels[
+                            lesson.status as keyof typeof statusLabels
+                          ] || lesson.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2">
+                        <Select
+                          value={lesson.status}
+                          onValueChange={(value) =>
+                            updateLessonStatus(lesson.id, value)
+                          }
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="PROGRAMMED">
+                              Programmé
+                            </SelectItem>
+                            <SelectItem value="REPORTED">Reporté</SelectItem>
+                            <SelectItem value="COMPLETED">Terminé</SelectItem>
+                            <SelectItem value="CANCELLED">Annulé</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sélectionner une nouvelle date</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleDateSelect}
+              locale={fr}
+              className="rounded-md border"
+              disabled={(date) => isBefore(date, startOfDay(new Date()))}
+              fromDate={new Date()}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDatePickerOpen(false)}
+            >
+              Annuler
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }

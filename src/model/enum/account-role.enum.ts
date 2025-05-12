@@ -1,6 +1,6 @@
 export enum AccountRoleEnum {
-	ADMINISTRATOR = "Administrateur",
-	STUDENT = "Etudiant",
-	PROFESSOR = "Enseignant",
-	EDUCATOR = "Educateur",
+  ADMINISTRATOR = "Administrateur",
+  STUDENT = "Etudiant",
+  PROFESSOR = "Enseignant",
+  EDUCATOR = "Educateur",
 }
