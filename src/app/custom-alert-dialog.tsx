@@ -26,8 +26,14 @@ const CustomAlertDialog = ({
 }) => {
 	return (
 		<AlertDialog>
-			<AlertDialogTrigger className={className}>
-				{children}
+			<AlertDialogTrigger asChild>
+				<Button
+					variant="destructive"
+					size="sm"
+					className={className}
+				>
+					{children}
+				</Button>
 			</AlertDialogTrigger>
 			<AlertDialogContent>
 				<AlertDialogHeader>

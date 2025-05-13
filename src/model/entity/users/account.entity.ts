@@ -7,5 +7,6 @@ export interface Account extends BaseEntity {
 	contactDetails: ContactDetails;
 	email: string;
 	address: Address;
+	identifier: string;
 	role: AccountRoleEnum;
 }

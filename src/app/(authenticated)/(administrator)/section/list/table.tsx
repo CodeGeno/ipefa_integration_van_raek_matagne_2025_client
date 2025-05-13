@@ -6,9 +6,6 @@ import { SectionCategoryEnum } from "@/model/enum/section-category.enum";
 import { SectionTypeEnum } from "@/model/enum/section-type.enum";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Trash2, BookOpen, GraduationCap } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-
 interface SectionTableProps {
 	sections: Section[];
 }
@@ -19,7 +16,7 @@ const SectionTable: React.FC<SectionTableProps> = ({
 	sections: Section[];
 }) => {
 	const router = useRouter();
-	const deleteSection = async (sectionId: number) => {
+	const deleteSection = async (sectionId: string) => {
 		try {
 			const response = await del(`/section/delete/${sectionId}/`);
 			if (response.success) {
@@ -61,85 +58,62 @@ const SectionTable: React.FC<SectionTableProps> = ({
 	};
 
 	return (
-		<div className="space-y-4">
-			{sections.map((section) => (
-				<div
-					key={section.id}
-					className="group relative bg-white rounded-lg border border-slate-200 p-6 hover:border-slate-300 transition-all duration-200"
-				>
-					<div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-						<div className="space-y-3 flex-1">
-							<div className="flex items-center gap-2">
-								<h3 className="text-xl font-semibold text-slate-900">
-									{section.name}
-								</h3>
-								<Badge
-									variant="secondary"
-									className="ml-2"
-								>
-									{section.ues?.length || 0} UEs
-								</Badge>
-							</div>
-
-							<div className="flex flex-wrap gap-2">
-								<div className="flex items-center gap-1.5 text-slate-600">
-									<GraduationCap className="h-4 w-4" />
-									<span className="text-sm">
-										{getSectionTypeLabel(
-											section.sectionType
-										)}
-									</span>
-								</div>
-								<div className="flex items-center gap-1.5 text-slate-600">
-									<BookOpen className="h-4 w-4" />
-									<span className="text-sm">
-										{getSectionCategoryLabel(
-											section.sectionCategory
-										)}
-									</span>
-								</div>
-							</div>
-
-							{section.description && (
-								<p className="text-sm text-slate-600 mt-2">
-									{section.description}
-								</p>
-							)}
+		<>
+			<div className="flex flex-col gap-4 ">
+				{sections.map((section) => (
+					<div
+						key={section.id}
+						className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-lg border"
+					>
+						<div className="space-y-1 flex-1">
+							<h3 className="text-lg font-semibold">
+								{section.name}
+							</h3>
+							<p className="text-sm text-muted-foreground">
+								{getSectionTypeLabel(section.sectionType)}
+							</p>
+							<p className="text-sm text-muted-foreground">
+								{getSectionCategoryLabel(
+									section.sectionCategory
+								)}
+							</p>
 						</div>
 
-						<div className="flex items-center gap-2">
+						<div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
 							<Button
-								variant="outline"
-								size="sm"
-								className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
+								variant="secondary"
+								className="w-full md:w-auto"
+								onClick={() =>
+									router.push(
+										`/section/details/${section.id}`
+									)
+								}
+							>
+								Détails
+							</Button>
+							<Button
+								variant="secondary"
+								className="w-full md:w-auto"
 								onClick={() =>
 									router.push(`/section/edit/${section.id}`)
 								}
 							>
-								<Pencil className="h-4 w-4" />
 								Modifier
 							</Button>
 							<CustomAlertDialog
 								title="Supprimer la section"
-								description="Êtes-vous sûr de vouloir supprimer cette section ? Cette action est irréversible."
-								actionButtonAction={() =>
-									deleteSection(section.id)
-								}
+								description="Voulez-vous vraiment supprimer la section ?"
+								actionButtonAction={() => {
+									deleteSection(section.id.toString());
+								}}
 							>
-								<Button
-									variant="ghost"
-									size="sm"
-									className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-								>
-									<Trash2 className="h-4 w-4" />
-									Supprimer
-								</Button>
+								Supprimer
 							</CustomAlertDialog>
 						</div>
 					</div>
-				</div>
-			))}
-		</div>
+				))}
+			</div>
+		</>
 	);
 };
 

@@ -11,100 +11,65 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { Edit, GraduationCap, BookOpen, Eye } from "lucide-react";
-import Link from "next/link";
+import { EditIcon } from "lucide-react";
 
 export const StudentTable: React.FC<{
 	studentsData: Student[];
 }> = ({ studentsData }) => {
 	const router = useRouter();
-
 	return (
-		<div className="rounded-md border">
+		<div className="container mx-auto">
 			<Table>
 				<TableHeader>
-					<TableRow>
-						<TableHead className="w-[100px]">ID</TableHead>
+					<TableRow className="text-center">
+						<TableHead>ID</TableHead>
 						<TableHead>Prénom</TableHead>
 						<TableHead>Nom</TableHead>
 						<TableHead>Email</TableHead>
 						<TableHead>Téléphone</TableHead>
-						<TableHead className="text-right">Actions</TableHead>
+						<TableHead>Actions</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{studentsData?.map((student) => (
-						<TableRow
-							key={student.id}
-							className="hover:bg-muted/50"
-						>
-							<TableCell className="font-medium">
-								{student.id}
-							</TableCell>
-							<TableCell>
-								{student.contactDetails.firstName}
-							</TableCell>
-							<TableCell>
-								{student.contactDetails.lastName}
-							</TableCell>
-							<TableCell>{student.email}</TableCell>
-							<TableCell>
-								{student.contactDetails.phoneNumber || "-"}
-							</TableCell>
-							<TableCell>
-								<div className="flex justify-end gap-2">
-									<Link
-										href={`/student/details/${student.id}`}
-									>
-										<Button
-											variant="outline"
-											size="sm"
-											className="h-8"
-										>
-											<Eye className="h-4 w-4 mr-2" />
-											Voir détails
-										</Button>
-									</Link>
-									<Link href={`/student/edit/${student.id}`}>
-										<Button
-											variant="outline"
-											size="sm"
-											className="h-8"
-										>
-											<Edit className="h-4 w-4 mr-2" />
-											Modifier
-										</Button>
-									</Link>
+					{studentsData?.map((student) => {
+						console.log(student);
+						return (
+							<TableRow key={student.id}>
+								<TableCell>{student.id}</TableCell>
+								<TableCell>
+									{student.contactDetails.firstName}
+								</TableCell>
+								<TableCell>
+									{student.contactDetails.lastName}
+								</TableCell>
+								<TableCell>{student.email}</TableCell>
+								<TableCell>
+									{student.contactDetails.phoneNumber}
+								</TableCell>
+
+								<TableCell>
 									<Button
-										variant="outline"
-										size="sm"
-										className="h-8"
-										onClick={() =>
+										onClick={() => {
 											router.push(
-												`/student/details/${student.id}?tab=section`
-											)
-										}
+												`/student/edit/${student.id}`
+											);
+										}}
 									>
-										<GraduationCap className="h-4 w-4 mr-2" />
-										Inscrire à une section
+										Modifier
 									</Button>
 									<Button
-										variant="outline"
-										size="sm"
-										className="h-8"
-										onClick={() =>
+										onClick={() => {
 											router.push(
-												`/student/details/${student.id}?tab=ue`
-											)
-										}
+												`/section/registration/${student.id}`
+											);
+										}}
 									>
-										<BookOpen className="h-4 w-4 mr-2" />
-										Inscrire à une UE
+										Inscire à une section
 									</Button>
-								</div>
-							</TableCell>
-						</TableRow>
-					))}
+								</TableCell>
+							</TableRow>
+						);
+					})}
 				</TableBody>
 			</Table>
 		</div>

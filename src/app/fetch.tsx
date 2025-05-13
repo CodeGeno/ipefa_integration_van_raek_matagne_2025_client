@@ -16,6 +16,7 @@ const myFetch = async <T,>(
 	const token = localStorage.getItem("token");
 	const role = localStorage.getItem("role");
 	try {
+		console.log("Le token qui casse les couilles", token);
 		const response = await fetch(BASE_URL + url, {
 			...options,
 			headers: {
@@ -25,8 +26,9 @@ const myFetch = async <T,>(
 		});
 		const data = await response.json();
 		if (response.status === 401) {
-			alert("Vous n'êtes pas autorisé à accéder à cette page");
-			window.location.href = "/";
+			console.log(data);
+			//alert("Vous n'êtes pas autorisé à accéder à cette page");
+			//window.location.href = "/";
 		}
 		return data as ApiSuccess<T>;
 	} catch (error) {
@@ -71,23 +73,38 @@ const getPaginated = async <T,>(
 };
 // Méthode POST
 const post = async <T,>(url: string, data: any): Promise<ApiResponse<T>> => {
+	const token = localStorage.getItem("token");
 	return myFetch<T>(url, {
 		method: "POST",
 		body: JSON.stringify(data),
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${token}`,
+		},
 	});
 };
 
 // Méthode DELETE
 const del = async <T,>(url: string): Promise<ApiResponse<T>> => {
+	const token = localStorage.getItem("token");
 	return myFetch<T>(url, {
 		method: "DELETE",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${token}`,
+		},
 	});
 };
 
 const patch = async <T,>(url: string, data: any): Promise<ApiResponse<T>> => {
+	const token = localStorage.getItem("token");
 	return myFetch<T>(url, {
 		method: "PATCH",
 		body: JSON.stringify(data),
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${token}`,
+		},
 	});
 };
 

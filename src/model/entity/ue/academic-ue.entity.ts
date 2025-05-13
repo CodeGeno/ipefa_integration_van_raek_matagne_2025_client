@@ -1,38 +1,38 @@
-import { UE } from "./ue.entity";
-import { Student } from "../users/student.entity";
-import { Employee } from "../lessons/employee.entity";
 import { BaseEntity } from "@/model/entity/base.entity";
+import { Student } from "@/model/entity/users/student.entity";
+import { Lesson } from "@/model/entity/lessons/lesson.entity";
+import { UE } from "@/model/entity/ue/ue.entity";
+import { Employee } from "../lessons/employee.entity";
 
 export interface AcademicUE extends BaseEntity {
 	id: string;
-	year: number;
-	start_date: string;
-	end_date: string;
+	label: string;
+	numberOfPeriods: number;
+	sectionId: string;
+	sectionName: string;
+	cycleYear: number;
+	startDate: string;
+	endDate: string;
+	prerequisites: string[];
+	sessions: UESession[];
 	ue: UE;
 	students: Student[];
-	professor: Employee | null;
-	lessons: {
-		id: number;
-		lesson_date: string;
-		status: string;
-	}[];
-	results: {
-		id: number;
-		result: number | null;
-		period: number;
-		success: boolean;
-		isExempt: boolean;
-		approved: boolean;
-	}[];
+	lessons: Lesson[];
+	professor: Employee;
+}
+
+export interface UESession {
+	id: string;
+	date: string;
+	status: "scheduled" | "completed" | "cancelled";
 }
 
 export interface CreateAcademicUEDto {
-	ue_id: number;
-	year: number;
-	start_date: string;
-	end_date: string;
-	professor_id?: number;
-	lessons_data: {
-		lesson_date: string;
-	}[];
+	label: string;
+	numberOfPeriods: number;
+	sectionId: string;
+	cycleYear: number;
+	startDate: string;
+	endDate: string;
+	prerequisites: string[];
 }
