@@ -24,10 +24,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Section } from "@/model/entity/ue/section.entity";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, BookOpen, GraduationCap, Clock } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  GraduationCap,
+  Clock,
+  X,
+  Save,
+  BadgeCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { get, patch } from "@/app/fetch";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 // Define schema with Zod
 const ueUpdateSchema = z.object({
@@ -47,6 +55,17 @@ const ueUpdateSchema = z.object({
 
 type UEFormData = z.infer<typeof ueUpdateSchema>;
 
+interface ParsedUE {
+  id: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+  section: number;
+  prerequisites: { id: number; name: string }[];
+  cycle: number;
+  periods: number;
+}
+
 const UEEditPage = () => {
   const params = useParams();
   const router = useRouter();
@@ -54,7 +73,14 @@ const UEEditPage = () => {
 
   const [sections, setSections] = useState<Section[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [availableUEs, setAvailableUEs] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [selectedPrerequisites, setSelectedPrerequisites] = useState<
+    { id: number; name: string }[]
+  >([]);
 
   const {
     register,
@@ -63,7 +89,7 @@ const UEEditPage = () => {
     reset,
     trigger,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting: formIsSubmitting },
   } = useForm<UEFormData>({
     resolver: zodResolver(ueUpdateSchema),
     defaultValues: {
@@ -100,6 +126,29 @@ const UEEditPage = () => {
               cycle: ue.cycle,
               periods: ue.periods,
             });
+            // Set initial prerequisites
+            if (ue.prerequisites && Array.isArray(ue.prerequisites)) {
+              setSelectedPrerequisites(ue.prerequisites);
+            }
+
+            // Charger les UEs disponibles pour la section actuelle
+            const sectionResponse = await get<Section>(
+              `/section/${ue.section}/`
+            );
+            if (sectionResponse.success && sectionResponse.data.ues) {
+              // Filtrer uniquement les UEs actives et exclure l'UE actuelle
+              const activeUEs = sectionResponse.data.ues.filter(
+                (sectionUE) =>
+                  sectionUE.isActive &&
+                  sectionUE.id !== parseInt(ueId as string)
+              );
+              setAvailableUEs(
+                activeUEs.map((sectionUE) => ({
+                  id: sectionUE.id,
+                  name: sectionUE.name,
+                }))
+              );
+            }
           }
         } else {
           throw new Error("Erreur lors de la récupération des données");
@@ -119,8 +168,33 @@ const UEEditPage = () => {
     }
   }, [ueId, reset]);
 
-  const onSubmit = async (data: UEFormData) => {
+  const handleSectionChange = async (value: string) => {
+    setValue("sectionId", value);
+    trigger("sectionId");
     try {
+      const response = await get<Section>(`/section/${value}/`);
+      if (response.success && response.data.ues) {
+        // Filtrer uniquement les UEs actives et exclure l'UE actuelle
+        const activeUEs = response.data.ues.filter(
+          (ue) => ue.isActive && ue.id !== parseInt(ueId as string)
+        );
+        setAvailableUEs(
+          activeUEs.map((ue) => ({
+            id: ue.id,
+            name: ue.name,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error loading UEs:", error);
+    }
+  };
+
+  const onSubmit = async (data: UEFormData) => {
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
       const response = await patch(`/ue/update/${ueId}/`, {
         name: data.name,
         description: data.description,
@@ -128,32 +202,38 @@ const UEEditPage = () => {
         isActive: data.isActive,
         cycle: data.cycle,
         periods: data.periods,
+        prerequisites: selectedPrerequisites.map((prereq) => ({
+          ueId: prereq.id,
+        })),
       });
 
-      if (response.success) {
-        toast({
-          title: "Succès",
-          description: "L'UE a été mise à jour avec succès",
-        });
-        router.push("/ue");
-      } else {
+      if (!response.success) {
         throw new Error(
           response.message || "Erreur lors de la mise à jour de l'UE"
         );
       }
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Une erreur est survenue lors de la mise à jour"
-      );
-      console.error("Error updating UE:", err);
-    }
-  };
 
-  const handleSectionChange = (value: string) => {
-    setValue("sectionId", value);
-    trigger("sectionId");
+      // Attendre un peu pour s'assurer que tout est bien terminé
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Afficher le toast de succès
+      toast.success("UE modifiée avec succès", {
+        description: `L'unité d'enseignement "${data.name}" a été modifiée avec succès. Vous allez être redirigé...`,
+        duration: 3000,
+        icon: <BadgeCheck className="h-5 w-5 text-green-500" />,
+      });
+
+      // Attendre que le toast soit visible avant de rediriger
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      router.push("/ue");
+    } catch (err) {
+      setIsSubmitting(false);
+      toast.error("Erreur lors de la modification", {
+        description:
+          "Une erreur est survenue lors de la modification de l'UE. Veuillez réessayer.",
+        duration: 5000,
+      });
+    }
   };
 
   const handleFieldBlur = (fieldName: keyof UEFormData) => {
@@ -203,7 +283,7 @@ const UEEditPage = () => {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-semibold">Modifier l'UE</h1>
+          <h1 className="text-2xl font-semibold">Modification de l'UE</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Modifiez les informations de l'unité d'enseignement
           </p>
@@ -243,6 +323,7 @@ const UEEditPage = () => {
                   {...register("name")}
                   onBlur={handleFieldBlur("name")}
                   className="h-10"
+                  disabled={isSubmitting}
                 />
                 {errors.name && (
                   <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -260,6 +341,7 @@ const UEEditPage = () => {
                   {...register("description")}
                   onBlur={handleFieldBlur("description")}
                   className="h-10"
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -279,6 +361,7 @@ const UEEditPage = () => {
                   {...register("periods", { valueAsNumber: true })}
                   onBlur={handleFieldBlur("periods")}
                   className="h-10"
+                  disabled={isSubmitting}
                 />
                 {errors.periods && (
                   <p className="text-sm text-red-500">
@@ -303,6 +386,7 @@ const UEEditPage = () => {
                   {...register("cycle", { valueAsNumber: true })}
                   onBlur={handleFieldBlur("cycle")}
                   className="h-10"
+                  disabled={isSubmitting}
                 />
                 {errors.cycle && (
                   <p className="text-sm text-red-500">{errors.cycle.message}</p>
@@ -317,6 +401,7 @@ const UEEditPage = () => {
                 <Select
                   onValueChange={handleSectionChange}
                   defaultValue={watch("sectionId")}
+                  disabled={isSubmitting}
                 >
                   <SelectTrigger className="h-10">
                     <SelectValue placeholder="Sélectionner une section" />
@@ -355,27 +440,113 @@ const UEEditPage = () => {
                     onCheckedChange={(checked) => {
                       setValue("isActive", checked === true);
                     }}
+                    disabled={isSubmitting}
                   />
                   <Label htmlFor="isActive" className="cursor-pointer">
                     UE active
                   </Label>
                 </div>
               </div>
+
+              {/* Prérequis */}
+              <div className="space-y-2">
+                <Label htmlFor="prerequisites">Prérequis</Label>
+                <div className="relative">
+                  <Select
+                    onValueChange={(value) => {
+                      const id = parseInt(value);
+                      const selectedUE = availableUEs.find(
+                        (ue) => ue.id === id
+                      );
+                      if (
+                        selectedUE &&
+                        !selectedPrerequisites.some((p) => p.id === id)
+                      ) {
+                        setSelectedPrerequisites([
+                          ...selectedPrerequisites,
+                          selectedUE,
+                        ]);
+                      }
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner des prérequis" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableUEs.length > 0 ? (
+                        availableUEs
+                          .filter(
+                            (ue) =>
+                              !selectedPrerequisites.some((p) => p.id === ue.id)
+                          )
+                          .map((ue) => (
+                            <SelectItem
+                              key={ue.id.toString()}
+                              value={ue.id.toString()}
+                            >
+                              {ue.name}
+                            </SelectItem>
+                          ))
+                      ) : (
+                        <SelectItem value="none" disabled>
+                          {selectedPrerequisites.length > 0
+                            ? "Toutes les UEs sont déjà sélectionnées"
+                            : "Sélectionnez d'abord une section"}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+
+                  {selectedPrerequisites.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {selectedPrerequisites.map((prereq) => (
+                        <div
+                          key={`prereq-${prereq.id}`}
+                          className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
+                        >
+                          {prereq.name}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 w-4 p-0 hover:bg-transparent"
+                            onClick={() => {
+                              setSelectedPrerequisites(
+                                selectedPrerequisites.filter(
+                                  (p) => p.id !== prereq.id
+                                )
+                              );
+                            }}
+                            disabled={isSubmitting}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-end space-x-4 pt-4">
               <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push("/ue")}
+                type="submit"
+                className="flex items-center gap-2"
                 disabled={isSubmitting}
               >
-                Annuler
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting
-                  ? "Enregistrement..."
-                  : "Enregistrer les modifications"}
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                    <span>Modification en cours...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    <span>Enregistrer les modifications</span>
+                  </>
+                )}
               </Button>
             </div>
           </form>

@@ -166,8 +166,8 @@ const StudentDetailsPage = () => {
 											</span>
 										</div>
 										<p className="text-lg">
-											{student?.contactDetails
-												?.identifier || "Non spécifié"}
+											{student?.identifier ||
+												"Non spécifié"}
 										</p>
 									</div>
 								</div>
@@ -283,31 +283,21 @@ const StudentDetailsPage = () => {
 												<TableCell className="font-medium">
 													{ue.ue.name}
 												</TableCell>
-												<TableCell>{ue.year}</TableCell>
+												<TableCell>
+													{ue.cycleYear}
+												</TableCell>
 												<TableCell>
 													{ue.professor
 														? `${ue.professor.contactDetails.firstName} ${ue.professor.contactDetails.lastName}`
 														: "Non assigné"}
 												</TableCell>
 												<TableCell>
-													{ue.ue.period}
+													{ue.ue.periods}
 												</TableCell>
 												<TableCell>
-													{ue.results?.[0]
-														?.success ? (
-														<span className="text-green-600">
-															Réussi
-														</span>
-													) : ue.results?.[0]
-															?.isExempt ? (
-														<span className="text-blue-600">
-															Dispensé
-														</span>
-													) : (
-														<span className="text-yellow-600">
-															En cours
-														</span>
-													)}
+													<span className="text-yellow-600">
+														En cours
+													</span>
 												</TableCell>
 											</TableRow>
 										))}

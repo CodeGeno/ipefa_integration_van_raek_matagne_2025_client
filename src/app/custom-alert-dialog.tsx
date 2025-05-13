@@ -26,14 +26,11 @@ const CustomAlertDialog = ({
 }) => {
 	return (
 		<AlertDialog>
-			<AlertDialogTrigger asChild>
-				<Button
-					variant="destructive"
-					size="sm"
-					className={className}
-				>
-					{children}
-				</Button>
+			<AlertDialogTrigger
+				asChild
+				className={className}
+			>
+				{children}
 			</AlertDialogTrigger>
 			<AlertDialogContent>
 				<AlertDialogHeader>
@@ -43,9 +40,9 @@ const CustomAlertDialog = ({
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel>Cancel</AlertDialogCancel>
+					<AlertDialogCancel>Annuler</AlertDialogCancel>
 					<AlertDialogAction onClick={actionButtonAction}>
-						Continue
+						Continuer
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
