@@ -34,27 +34,36 @@ const SectionTable: React.FC<SectionTableProps> = ({
 
 	// Fonction pour récupérer le libellé de l'enum SectionType
 	const getSectionTypeLabel = (type: any): string => {
-		const sectionTypeKey = Object.keys(SectionTypeEnum).find(
-			(key) =>
-				SectionTypeEnum[key as keyof typeof SectionTypeEnum] === type
-		);
-		return sectionTypeKey
-			? SectionTypeEnum[sectionTypeKey as keyof typeof SectionTypeEnum]
-			: type?.toString() || "N/A";
+		// Si le type est une valeur dans l'enum, on la retourne directement
+		if (Object.values(SectionTypeEnum).includes(type)) {
+			return type;
+		}
+
+		// Si le type est une clé de l'enum, on retourne la valeur correspondante
+		if (type in SectionTypeEnum) {
+			return SectionTypeEnum[type as keyof typeof SectionTypeEnum];
+		}
+
+		// Fallback
+		return type?.toString() || "N/A";
 	};
 
 	// Fonction pour récupérer le libellé de l'enum SectionCategory
 	const getSectionCategoryLabel = (category: any): string => {
-		const sectionCategoryKey = Object.keys(SectionCategoryEnum).find(
-			(key) =>
-				SectionCategoryEnum[key as keyof typeof SectionCategoryEnum] ===
-				category
-		);
-		return sectionCategoryKey
-			? SectionCategoryEnum[
-					sectionCategoryKey as keyof typeof SectionCategoryEnum
-			  ]
-			: category?.toString() || "N/A";
+		// Si la catégorie est une valeur dans l'enum, on la retourne directement
+		if (Object.values(SectionCategoryEnum).includes(category)) {
+			return category;
+		}
+
+		// Si la catégorie est une clé de l'enum, on retourne la valeur correspondante
+		if (category in SectionCategoryEnum) {
+			return SectionCategoryEnum[
+				category as keyof typeof SectionCategoryEnum
+			];
+		}
+
+		// Fallback
+		return category?.toString() || "N/A";
 	};
 
 	return (

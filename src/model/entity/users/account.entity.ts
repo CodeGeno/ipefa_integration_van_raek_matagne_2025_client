@@ -8,5 +8,5 @@ export interface Account extends BaseEntity {
 	email: string;
 	address: Address;
 	identifier: string;
-	role: AccountRoleEnum;
+	role: keyof typeof AccountRoleEnum;
 }

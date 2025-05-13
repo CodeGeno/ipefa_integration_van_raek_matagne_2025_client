@@ -28,15 +28,86 @@ import { patch } from "@/app/fetch";
 import { sectionSchema, SectionFormData } from "@/model/schema/section.schema";
 import { Textarea } from "@/components/ui/textarea";
 import { Section } from "@/model/entity/ue/section.entity";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useReducer } from "react";
 import { get } from "@/app/fetch";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
+
+// Fonction utilitaire pour valider les valeurs enum
+const isValidEnum = (value: any, enumObject: object): boolean => {
+	return Object.keys(enumObject).includes(value);
+};
+
+// Fonction pour trouver la clé d'une énumération à partir de sa valeur
+const getEnumKeyByValue = (
+	enumObj: any,
+	value: string | undefined
+): string | undefined => {
+	if (!value) return undefined;
+
+	// Si la valeur est déjà une clé de l'enum, la retourner directement
+	if (Object.keys(enumObj).includes(value)) {
+		console.log(
+			`Valeur '${value}' est déjà une clé d'enum, retournée directement`
+		);
+		return value;
+	}
+
+	// Sinon, chercher la clé correspondant à la valeur
+	const keys = Object.keys(enumObj);
+	for (const key of keys) {
+		if (enumObj[key] === value) {
+			console.log(`Clé trouvée: '${key}' pour la valeur '${value}'`);
+			return key;
+		}
+	}
+
+	console.log(`Aucune clé trouvée pour la valeur '${value}'`);
+	return undefined;
+};
+
+// Fonction pour convertir une clé d'énumération en sa valeur
+const getEnumValueByKey = (
+	enumObj: any,
+	key: string | undefined
+): string | undefined => {
+	if (!key) return undefined;
+
+	if (key in enumObj) {
+		return enumObj[key];
+	}
+
+	return key; // Si ce n'est pas une clé, retourner la valeur telle quelle
+};
+
+// Options statiques pour les selects
+const typeOptions = Object.entries(SectionTypeEnum).map(([key, value]) => ({
+	key,
+	value: key,
+	label: value,
+}));
+
+const categoryOptions = Object.entries(SectionCategoryEnum).map(
+	([key, value]) => ({
+		key,
+		value: key,
+		label: value,
+	})
+);
 
 export const SectionEditForm = ({ id }: { id: string }) => {
 	const router = useRouter();
 	const [section, setSection] = useState<Section | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	// Forcer le rendu du formulaire
+	const [, forceUpdate] = useReducer((x) => x + 1, 0);
+	// États pour suivre les valeurs des Select
+	const [selectedType, setSelectedType] = useState<string | undefined>(
+		undefined
+	);
+	const [selectedCategory, setSelectedCategory] = useState<
+		string | undefined
+	>(undefined);
 
 	// Initialisation du formulaire avec React Hook Form
 	const form = useForm<SectionFormData>({
@@ -52,6 +123,10 @@ export const SectionEditForm = ({ id }: { id: string }) => {
 
 	useEffect(() => {
 		fetchSection();
+
+		// Afficher les options disponibles pour le debug
+		console.log("Type options:", typeOptions);
+		console.log("Category options:", categoryOptions);
 	}, [id]);
 
 	const fetchSection = async () => {
@@ -61,15 +136,84 @@ export const SectionEditForm = ({ id }: { id: string }) => {
 
 			if (response.success && response.data) {
 				const sectionData = response.data;
+				console.log("Données de section reçues:", sectionData);
+				console.log(
+					"Type d'énumération reçu:",
+					sectionData.sectionType,
+					typeof sectionData.sectionType
+				);
+				console.log(
+					"Catégorie d'énumération reçue:",
+					sectionData.sectionCategory,
+					typeof sectionData.sectionCategory
+				);
+
 				setSection(sectionData);
 
-				// Mise à jour des valeurs du formulaire après chargement des données
-				form.reset({
-					name: sectionData.name || "",
-					sectionType: sectionData.sectionType,
-					sectionCategory: sectionData.sectionCategory,
-					description: sectionData.description || "",
-				});
+				// Vérifions les clés disponibles dans les enums
+				console.log(
+					"SectionTypeEnum keys:",
+					Object.keys(SectionTypeEnum)
+				);
+				console.log(
+					"SectionTypeEnum values:",
+					Object.values(SectionTypeEnum)
+				);
+				console.log(
+					"SectionCategoryEnum keys:",
+					Object.keys(SectionCategoryEnum)
+				);
+				console.log(
+					"SectionCategoryEnum values:",
+					Object.values(SectionCategoryEnum)
+				);
+
+				// Convertir les valeurs en clés d'enum
+				const typeKey = getEnumKeyByValue(
+					SectionTypeEnum,
+					sectionData.sectionType
+				);
+				const categoryKey = getEnumKeyByValue(
+					SectionCategoryEnum,
+					sectionData.sectionCategory
+				);
+
+				console.log("Type key:", typeKey, "Category key:", categoryKey);
+
+				// Si les clés sont trouvées, définir les états
+				if (typeKey && categoryKey) {
+					setSelectedType(typeKey);
+					setSelectedCategory(categoryKey);
+
+					// Mise à jour des valeurs du formulaire
+					form.reset({
+						name: sectionData.name || "",
+						sectionType: typeKey as any,
+						sectionCategory: categoryKey as any,
+						description: sectionData.description || "",
+					});
+				} else {
+					// Si les clés ne sont pas trouvées, utiliser directement les valeurs
+					console.log(
+						"Clés non trouvées, utilisation directe des valeurs"
+					);
+					setSelectedType(sectionData.sectionType);
+					setSelectedCategory(sectionData.sectionCategory);
+
+					form.reset({
+						name: sectionData.name || "",
+						sectionType: sectionData.sectionType,
+						sectionCategory: sectionData.sectionCategory,
+						description: sectionData.description || "",
+					});
+				}
+
+				console.log(
+					"Valeurs du formulaire après reset:",
+					form.getValues()
+				);
+				console.log("Selected type:", selectedType);
+				console.log("Selected category:", selectedCategory);
 			} else {
 				toast({
 					title: "Erreur",
@@ -93,6 +237,9 @@ export const SectionEditForm = ({ id }: { id: string }) => {
 	// Fonction de soumission du formulaire
 	const onSubmit = async (values: SectionFormData) => {
 		if (!section) return;
+
+		// Le serveur attend les clés d'énumération (BACHELOR, TECHNICAL), pas besoin de conversion
+		console.log("values à envoyer au serveur:", values);
 
 		try {
 			const response = await patch(
@@ -208,10 +355,22 @@ export const SectionEditForm = ({ id }: { id: string }) => {
 													Type de cursus
 												</FormLabel>
 												<Select
-													onValueChange={
-														field.onChange
-													}
-													value={field.value}
+													value={selectedType}
+													onValueChange={(value) => {
+														console.log(
+															"Nouvelle valeur de type sélectionnée:",
+															value
+														);
+														setSelectedType(value);
+														form.setValue(
+															"sectionType",
+															value as any
+														);
+														console.log(
+															"Valeur du formulaire après setValue:",
+															form.getValues()
+														);
+													}}
 												>
 													<FormControl>
 														<SelectTrigger>
@@ -219,20 +378,22 @@ export const SectionEditForm = ({ id }: { id: string }) => {
 														</SelectTrigger>
 													</FormControl>
 													<SelectContent>
-														{Object.keys(
-															SectionTypeEnum
-														).map((key) => (
-															<SelectItem
-																key={key}
-																value={key}
-															>
-																{
-																	SectionTypeEnum[
-																		key as keyof typeof SectionTypeEnum
-																	]
-																}
-															</SelectItem>
-														))}
+														{typeOptions.map(
+															(option) => (
+																<SelectItem
+																	key={
+																		option.key
+																	}
+																	value={
+																		option.value
+																	}
+																>
+																	{
+																		option.label
+																	}
+																</SelectItem>
+															)
+														)}
 													</SelectContent>
 												</Select>
 												<FormMessage />
@@ -247,10 +408,24 @@ export const SectionEditForm = ({ id }: { id: string }) => {
 											<FormItem>
 												<FormLabel>Catégorie</FormLabel>
 												<Select
-													onValueChange={
-														field.onChange
-													}
-													value={field.value}
+													value={selectedCategory}
+													onValueChange={(value) => {
+														console.log(
+															"Nouvelle valeur de catégorie sélectionnée:",
+															value
+														);
+														setSelectedCategory(
+															value
+														);
+														form.setValue(
+															"sectionCategory",
+															value as any
+														);
+														console.log(
+															"Valeur du formulaire après setValue:",
+															form.getValues()
+														);
+													}}
 												>
 													<FormControl>
 														<SelectTrigger>
@@ -258,20 +433,22 @@ export const SectionEditForm = ({ id }: { id: string }) => {
 														</SelectTrigger>
 													</FormControl>
 													<SelectContent>
-														{Object.keys(
-															SectionCategoryEnum
-														).map((key) => (
-															<SelectItem
-																key={key}
-																value={key}
-															>
-																{
-																	SectionCategoryEnum[
-																		key as keyof typeof SectionCategoryEnum
-																	]
-																}
-															</SelectItem>
-														))}
+														{categoryOptions.map(
+															(option) => (
+																<SelectItem
+																	key={
+																		option.key
+																	}
+																	value={
+																		option.value
+																	}
+																>
+																	{
+																		option.label
+																	}
+																</SelectItem>
+															)
+														)}
 													</SelectContent>
 												</Select>
 												<FormMessage />
