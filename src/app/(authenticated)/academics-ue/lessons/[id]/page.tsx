@@ -31,7 +31,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { addDays, isBefore, startOfDay } from "date-fns";
+import { addDays, isBefore, startOfDay, format, parseISO } from "date-fns";
 
 interface Lesson {
   id: number;
@@ -107,6 +107,8 @@ export default function LessonsPage() {
 
       if (newStatus === "REPORTED" && !newDate) {
         setSelectedLesson(lesson);
+        const lessonDate = parseISO(lesson.lesson_date);
+        setSelectedDate(lessonDate);
         setIsDatePickerOpen(true);
         return;
       }
@@ -132,11 +134,8 @@ export default function LessonsPage() {
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
     if (date && selectedLesson) {
-      updateLessonStatus(
-        selectedLesson.id,
-        "REPORTED",
-        date.toISOString().split("T")[0]
-      );
+      const formattedDate = format(date, "yyyy-MM-dd");
+      updateLessonStatus(selectedLesson.id, "REPORTED", formattedDate);
     }
   };
 
@@ -267,7 +266,7 @@ export default function LessonsPage() {
                   sortLessons(academicUE.lessons).map((lesson) => (
                     <tr key={lesson.id} className="border-t">
                       <td className="px-4 py-2">
-                        {new Date(lesson.lesson_date).toLocaleDateString()}
+                        {format(parseISO(lesson.lesson_date), "dd/MM/yyyy")}
                       </td>
                       <td className="px-4 py-2">
                         <span
@@ -325,6 +324,7 @@ export default function LessonsPage() {
               className="rounded-md border"
               disabled={(date) => isBefore(date, startOfDay(new Date()))}
               fromDate={new Date()}
+              defaultMonth={selectedDate}
             />
           </div>
           <DialogFooter>

@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { accountSchema, AccountFormData } from "@/model/schema/account.schema";
 import { AccountRoleEnum } from "@/model/enum/account-role.enum";
@@ -11,17 +11,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PersonalInfoForm } from "./PersonalInfoForm";
 import { AddressForm } from "./AddressForm";
 import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { jsPDF } from "jspdf";
 import { useForm } from "react-hook-form";
 import { post } from "@/app/fetch";
 import { Account } from "@/model/entity/users/account.entity";
 import { Separator } from "@/components/ui/separator";
-import { User, MapPin, Save, X } from "lucide-react";
+import { User, MapPin, Save, X, BadgeCheck } from "lucide-react";
 
 export const StudentCreationForm: React.FC = () => {
-  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const form = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
@@ -46,59 +46,61 @@ export const StudentCreationForm: React.FC = () => {
   });
 
   const onSubmit = async (data: AccountFormData) => {
+    if (isSubmitting) return;
+
     try {
-      let formattedData = { ...data };
-      formattedData.contactDetails.birthDate = format(
-        data.contactDetails.birthDate,
-        "yyyy-MM-dd"
-      ) as unknown as Date;
+      setIsSubmitting(true);
+      const formattedData = {
+        ...data,
+        contactDetails: {
+          ...data.contactDetails,
+          birthDate: format(data.contactDetails.birthDate, "yyyy-MM-dd"),
+        },
+      };
 
       const response = await post("/security/create-student/", formattedData);
 
-      if (!response.success) {
-        toast({
-          title: "Erreur lors de la création du compte",
-          description: response.message,
-          variant: "destructive",
+      if (response.success) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        setIsSubmitting(false);
+        toast.success("Étudiant créé avec succès", {
+          description: `L'étudiant ${data.contactDetails.firstName} ${data.contactDetails.lastName} a été créé avec succès. Vous allez être redirigé...`,
+          duration: 3000,
+          icon: <BadgeCheck className="h-5 w-5 text-green-500" />,
         });
-        return;
+
+        const result = response.data as Account;
+        const doc = new jsPDF();
+
+        // Génération du PDF avec les informations du compte
+        doc.text("Informations du compte", 10, 10);
+        doc.text(
+          `Nom: ${result.contactDetails.firstName} ${result.contactDetails.lastName}`,
+          10,
+          20
+        );
+        doc.text(`Email: ${result.email}`, 10, 30);
+        doc.text(`Téléphone: ${result.contactDetails.phoneNumber}`, 10, 40);
+        doc.text(
+          `Adresse: ${result.address.street}, ${result.address.city}, ${result.address.zipCode}, ${result.address.country}`,
+          10,
+          50
+        );
+        doc.text(`Mot de passe: ${result.password}`, 10, 60);
+
+        // Affichage du PDF
+        doc.output("dataurlnewwindow");
+
+        router.push("/student/list");
+      } else {
+        throw new Error(response.message || "Une erreur est survenue");
       }
-
-      toast({
-        title: "Compte créé avec succès",
-        description: "Le compte a été créé avec succès",
-      });
-
-      const result = response.data as Account;
-      const doc = new jsPDF();
-
-      // Génération du PDF avec les informations du compte
-      doc.text("Informations du compte", 10, 10);
-      doc.text(
-        `Nom: ${result.contactDetails.firstName} ${result.contactDetails.lastName}`,
-        10,
-        20
-      );
-      doc.text(`Email: ${result.email}`, 10, 30);
-      doc.text(`Téléphone: ${result.contactDetails.phoneNumber}`, 10, 40);
-      doc.text(
-        `Adresse: ${result.address.street}, ${result.address.city}, ${result.address.zipCode}, ${result.address.country}`,
-        10,
-        50
-      );
-      doc.text(`Mot de passe: ${result.password}`, 10, 60);
-
-      // Affichage du PDF
-      doc.output("dataurlnewwindow");
-
-      // Redirection vers la liste des étudiants
-      router.push("/student/list");
     } catch (error) {
-      console.error("Erreur:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la création du compte",
-        variant: "destructive",
+      setIsSubmitting(false);
+      toast.error("Erreur lors de la création", {
+        description:
+          "Une erreur est survenue lors de la création de l'étudiant. Veuillez réessayer.",
+        duration: 5000,
       });
     }
   };
@@ -123,7 +125,11 @@ export const StudentCreationForm: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <PersonalInfoForm control={form.control} isEditing={false} />
+                <PersonalInfoForm
+                  control={form.control}
+                  isEditing={false}
+                  disabled={isSubmitting}
+                />
               </div>
             </CardContent>
           </Card>
@@ -142,7 +148,7 @@ export const StudentCreationForm: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <AddressForm control={form.control} />
+                <AddressForm control={form.control} disabled={isSubmitting} />
               </div>
             </CardContent>
           </Card>
@@ -154,13 +160,27 @@ export const StudentCreationForm: React.FC = () => {
             variant="outline"
             onClick={() => router.push("/student/list")}
             className="flex items-center gap-2"
+            disabled={isSubmitting}
           >
             <X className="h-4 w-4" />
             Annuler
           </Button>
-          <Button type="submit" className="flex items-center gap-2">
-            <Save className="h-4 w-4" />
-            Créer l'étudiant
+          <Button
+            type="submit"
+            className="flex items-center gap-2"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                <span>Enregistrement...</span>
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                <span>Créer l'étudiant</span>
+              </>
+            )}
           </Button>
         </div>
       </form>

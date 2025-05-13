@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,12 +31,13 @@ import { Section } from "@/model/entity/ue/section.entity";
 import { useState, useEffect } from "react";
 import { get } from "@/app/fetch";
 import Link from "next/link";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, BadgeCheck } from "lucide-react";
 
 export const SectionEditForm = ({ id }: { id: string }) => {
   const router = useRouter();
   const [section, setSection] = useState<Section | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialisation du formulaire avec React Hook Form
   const form = useForm<SectionFormData>({
@@ -84,44 +85,51 @@ export const SectionEditForm = ({ id }: { id: string }) => {
           description: sectionData.description || "",
         });
       } else {
-        toast({
-          title: "Erreur",
+        toast.error("Erreur", {
           description: "Données de section invalides",
-          variant: "destructive",
+          duration: 5000,
         });
       }
     } catch (error) {
-      console.error("Erreur de chargement:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de récupérer les données de la section",
-        variant: "destructive",
+      toast.error("Erreur", {
+        description: "Impossible de charger les données de la section",
+        duration: 5000,
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fonction de soumission du formulaire
   const onSubmit = async (values: SectionFormData) => {
-    if (!section) return;
+    if (isSubmitting) return;
 
     try {
-      await patch(`/section/update/${section.sectionId}/`, values);
-      toast({
-        title: "Section modifiée",
-        description: "La section a été modifiée avec succès",
+      setIsSubmitting(true);
+      const response = await patch(`/section/update/${id}/`, values);
+
+      if (!response.success) {
+        throw new Error(response.message || "Une erreur est survenue");
+      }
+
+      // Attendre un peu pour s'assurer que tout est bien terminé
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Afficher le toast de succès
+      toast.success("Section modifiée avec succès", {
+        description: `La section "${values.name}" a été modifiée avec succès. Vous allez être redirigé...`,
+        duration: 3000,
+        icon: <BadgeCheck className="h-5 w-5 text-green-500" />,
       });
-      setTimeout(() => {
-        router.push("/section/list");
-      }, 1500);
+
+      // Attendre que le toast soit visible avant de rediriger
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      router.push("/section/list");
     } catch (error) {
-      console.error("Erreur de soumission:", error);
-      toast({
-        title: "Erreur",
+      setIsSubmitting(false);
+      toast.error("Erreur lors de la modification", {
         description:
-          "Une erreur est survenue lors de la modification de la section",
-        variant: "destructive",
+          "Une erreur est survenue lors de la modification de la section. Veuillez réessayer.",
+        duration: 5000,
       });
     }
   };
@@ -129,16 +137,16 @@ export const SectionEditForm = ({ id }: { id: string }) => {
   if (isLoading) {
     return (
       <div className="container mx-auto p-4">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold">
-              Modification de la section
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Chargement des données...
-            </p>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Modification de la section</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-center items-center h-40">
+              <p>Chargement des données...</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -157,6 +165,7 @@ export const SectionEditForm = ({ id }: { id: string }) => {
             variant="outline"
             size="sm"
             className="flex items-center gap-2"
+            disabled={isSubmitting}
           >
             <ArrowLeft className="h-4 w-4" />
             Retour
@@ -182,6 +191,7 @@ export const SectionEditForm = ({ id }: { id: string }) => {
                         <Input
                           {...field}
                           placeholder="Ex: Bachelier en Informatique"
+                          disabled={isSubmitting}
                         />
                       </FormControl>
                       <FormMessage />
@@ -198,7 +208,8 @@ export const SectionEditForm = ({ id }: { id: string }) => {
                         <FormLabel>Type de cursus</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          value={field.value}
+                          defaultValue={field.value}
+                          disabled={isSubmitting}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -230,11 +241,12 @@ export const SectionEditForm = ({ id }: { id: string }) => {
                         <FormLabel>Catégorie</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          value={field.value}
+                          defaultValue={field.value}
+                          disabled={isSubmitting}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez un type de cursus" />
+                              <SelectValue placeholder="Sélectionner une catégorie" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -265,6 +277,7 @@ export const SectionEditForm = ({ id }: { id: string }) => {
                         <Textarea
                           placeholder="Ex: Cette section est destinée aux étudiants qui souhaitent devenir informaticiens"
                           {...field}
+                          disabled={isSubmitting}
                         />
                       </FormControl>
                       <FormMessage />
@@ -274,9 +287,22 @@ export const SectionEditForm = ({ id }: { id: string }) => {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" className="flex items-center gap-2">
-                  <Save className="h-4 w-4" />
-                  Enregistrer
+                <Button
+                  type="submit"
+                  className="flex items-center gap-2"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                      <span>Modification en cours...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span>Enregistrer les modifications</span>
+                    </>
+                  )}
                 </Button>
               </div>
             </form>

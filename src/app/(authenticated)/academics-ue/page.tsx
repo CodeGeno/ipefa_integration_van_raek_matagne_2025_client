@@ -78,7 +78,7 @@ export default function AcademicsUEPage({
     yearValue || new Date().getFullYear().toString()
   );
   const [activeOnly, setActiveOnly] = useState<boolean>(
-    activeOnlyValue === "true"
+    activeOnlyValue === "true" || true
   );
 
   const [sortConfig, setSortConfig] = useState<{
@@ -437,7 +437,7 @@ export default function AcademicsUEPage({
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
+                                className="bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
                               >
                                 <Calendar className="h-4 w-4 mr-1" />
                                 Leçons
@@ -447,7 +447,7 @@ export default function AcademicsUEPage({
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700"
+                                className="bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
                               >
                                 <GraduationCap className="h-4 w-4 mr-1" />
                                 Résultats
@@ -457,7 +457,7 @@ export default function AcademicsUEPage({
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700"
+                                className="bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
                               >
                                 <Users className="h-4 w-4 mr-1" />
                                 Inscriptions

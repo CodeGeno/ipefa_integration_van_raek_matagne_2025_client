@@ -24,10 +24,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Section } from "@/model/entity/ue/section.entity";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, BookOpen, GraduationCap, Clock, X } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  GraduationCap,
+  Clock,
+  X,
+  Save,
+  BadgeCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { get, patch } from "@/app/fetch";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 // Define schema with Zod
 const ueUpdateSchema = z.object({
@@ -65,6 +73,7 @@ const UEEditPage = () => {
 
   const [sections, setSections] = useState<Section[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availableUEs, setAvailableUEs] = useState<
     { id: number; name: string }[]
@@ -80,7 +89,7 @@ const UEEditPage = () => {
     reset,
     trigger,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting: formIsSubmitting },
   } = useForm<UEFormData>({
     resolver: zodResolver(ueUpdateSchema),
     defaultValues: {
@@ -182,7 +191,10 @@ const UEEditPage = () => {
   };
 
   const onSubmit = async (data: UEFormData) => {
+    if (isSubmitting) return;
+
     try {
+      setIsSubmitting(true);
       const response = await patch(`/ue/update/${ueId}/`, {
         name: data.name,
         description: data.description,
@@ -195,24 +207,32 @@ const UEEditPage = () => {
         })),
       });
 
-      if (response.success) {
-        toast({
-          title: "Succès",
-          description: "L'UE a été mise à jour avec succès",
-        });
-        router.push("/ue");
-      } else {
+      if (!response.success) {
         throw new Error(
           response.message || "Erreur lors de la mise à jour de l'UE"
         );
       }
+
+      // Attendre un peu pour s'assurer que tout est bien terminé
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Afficher le toast de succès
+      toast.success("UE modifiée avec succès", {
+        description: `L'unité d'enseignement "${data.name}" a été modifiée avec succès. Vous allez être redirigé...`,
+        duration: 3000,
+        icon: <BadgeCheck className="h-5 w-5 text-green-500" />,
+      });
+
+      // Attendre que le toast soit visible avant de rediriger
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      router.push("/ue");
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Une erreur est survenue lors de la mise à jour"
-      );
-      console.error("Error updating UE:", err);
+      setIsSubmitting(false);
+      toast.error("Erreur lors de la modification", {
+        description:
+          "Une erreur est survenue lors de la modification de l'UE. Veuillez réessayer.",
+        duration: 5000,
+      });
     }
   };
 
@@ -263,7 +283,7 @@ const UEEditPage = () => {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-semibold">Modifier l'UE</h1>
+          <h1 className="text-2xl font-semibold">Modification de l'UE</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Modifiez les informations de l'unité d'enseignement
           </p>
@@ -303,6 +323,7 @@ const UEEditPage = () => {
                   {...register("name")}
                   onBlur={handleFieldBlur("name")}
                   className="h-10"
+                  disabled={isSubmitting}
                 />
                 {errors.name && (
                   <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -320,6 +341,7 @@ const UEEditPage = () => {
                   {...register("description")}
                   onBlur={handleFieldBlur("description")}
                   className="h-10"
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -339,6 +361,7 @@ const UEEditPage = () => {
                   {...register("periods", { valueAsNumber: true })}
                   onBlur={handleFieldBlur("periods")}
                   className="h-10"
+                  disabled={isSubmitting}
                 />
                 {errors.periods && (
                   <p className="text-sm text-red-500">
@@ -363,6 +386,7 @@ const UEEditPage = () => {
                   {...register("cycle", { valueAsNumber: true })}
                   onBlur={handleFieldBlur("cycle")}
                   className="h-10"
+                  disabled={isSubmitting}
                 />
                 {errors.cycle && (
                   <p className="text-sm text-red-500">{errors.cycle.message}</p>
@@ -377,6 +401,7 @@ const UEEditPage = () => {
                 <Select
                   onValueChange={handleSectionChange}
                   defaultValue={watch("sectionId")}
+                  disabled={isSubmitting}
                 >
                   <SelectTrigger className="h-10">
                     <SelectValue placeholder="Sélectionner une section" />
@@ -415,6 +440,7 @@ const UEEditPage = () => {
                     onCheckedChange={(checked) => {
                       setValue("isActive", checked === true);
                     }}
+                    disabled={isSubmitting}
                   />
                   <Label htmlFor="isActive" className="cursor-pointer">
                     UE active
@@ -442,6 +468,7 @@ const UEEditPage = () => {
                         ]);
                       }
                     }}
+                    disabled={isSubmitting}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner des prérequis" />
@@ -491,6 +518,7 @@ const UEEditPage = () => {
                                 )
                               );
                             }}
+                            disabled={isSubmitting}
                           >
                             <X className="h-3 w-3" />
                           </Button>
@@ -504,17 +532,21 @@ const UEEditPage = () => {
 
             <div className="flex justify-end space-x-4 pt-4">
               <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push("/ue")}
+                type="submit"
+                className="flex items-center gap-2"
                 disabled={isSubmitting}
               >
-                Annuler
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting
-                  ? "Enregistrement..."
-                  : "Enregistrer les modifications"}
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                    <span>Modification en cours...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    <span>Enregistrer les modifications</span>
+                  </>
+                )}
               </Button>
             </div>
           </form>

@@ -18,9 +18,9 @@ import { z } from "zod";
 import { Section } from "@/model/entity/ue/section.entity";
 import { get, post } from "@/app/fetch";
 import { useRouter } from "next/navigation";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Save, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Save, X, BadgeCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Command,
@@ -61,8 +61,9 @@ const ueSchema = z.object({
   cycle: z
     .number()
     .int("Le cycle doit être un nombre entier")
-    .min(1, "Le cycle doit être au minimum 1")
-    .max(3, "Le cycle ne peut pas dépasser 3"),
+    .refine((val) => [1, 2, 3, 4].includes(val), {
+      message: "Le cycle doit être 1, 2, 3 ou 4",
+    }),
 
   periods: z
     .number()
@@ -80,6 +81,7 @@ const UECreatePage = () => {
   const router = useRouter();
   const [sections, setSections] = useState<Section[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableUEs, setAvailableUEs] = useState<
     { id: number; name: string }[]
   >([]);
@@ -92,6 +94,7 @@ const UECreatePage = () => {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<UEFormData>({
     resolver: zodResolver(ueSchema),
@@ -113,10 +116,9 @@ const UECreatePage = () => {
           setSections(response.data || []);
         }
       } catch (error) {
-        toast({
-          title: "Erreur",
+        toast.error("Erreur", {
           description: "Impossible de charger les sections",
-          variant: "destructive",
+          duration: 5000,
         });
       } finally {
         setIsLoading(false);
@@ -146,7 +148,12 @@ const UECreatePage = () => {
   };
 
   const onSubmit = async (data: UEFormData) => {
+    if (isSubmitting) return;
+
     try {
+      setIsSubmitting(true);
+
+      // Attendre que la requête soit complètement terminée
       const response = await post("/ue/create/", {
         name: data.name,
         description: data.description,
@@ -157,23 +164,41 @@ const UECreatePage = () => {
         prerequisites: selectedPrerequisites,
       });
 
-      if (response.success) {
-        toast({
-          title: "UE créée",
-          description: "L'unité d'enseignement a été créée avec succès",
-        });
-        setTimeout(() => {
-          router.push("/ue");
-        }, 1500);
+      // Vérifier si la requête a réussi
+      if (!response.success) {
+        throw new Error(response.message || "Une erreur est survenue");
       }
+
+      // Attendre un peu pour s'assurer que tout est bien terminé
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Afficher le toast de succès
+      toast.success("UE créée avec succès", {
+        description: `L'unité d'enseignement "${data.name}" a été créée avec succès. Vous allez être redirigé...`,
+        duration: 3000,
+        icon: <BadgeCheck className="h-5 w-5 text-green-500" />,
+      });
+
+      // Attendre que le toast soit visible avant de rediriger
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      router.push("/ue");
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la création de l'UE",
-        variant: "destructive",
+      setIsSubmitting(false);
+      toast.error("Erreur lors de la création", {
+        description:
+          "Une erreur est survenue lors de la création de l'UE. Veuillez réessayer.",
+        duration: 5000,
       });
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4">
@@ -211,6 +236,7 @@ const UECreatePage = () => {
                   id="name"
                   placeholder="Ex: Projet SGBD"
                   {...register("name")}
+                  disabled={isSubmitting}
                 />
                 {errors.name && (
                   <p className="text-red-500 text-sm mt-1">
@@ -225,6 +251,7 @@ const UECreatePage = () => {
                   id="description"
                   placeholder="Description de l'UE"
                   {...register("description")}
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -236,6 +263,7 @@ const UECreatePage = () => {
                     type="number"
                     placeholder="Ex: 80"
                     {...register("periods", { valueAsNumber: true })}
+                    disabled={isSubmitting}
                   />
                   {errors.periods && (
                     <p className="text-red-500 text-sm mt-1">
@@ -246,12 +274,23 @@ const UECreatePage = () => {
 
                 <div>
                   <Label htmlFor="cycle">Cycle</Label>
-                  <Input
-                    id="cycle"
-                    type="number"
-                    placeholder="Ex: 1"
-                    {...register("cycle", { valueAsNumber: true })}
-                  />
+                  <Select
+                    onValueChange={(value) =>
+                      setValue("cycle", parseInt(value))
+                    }
+                    defaultValue="1"
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un cycle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Cycle 1</SelectItem>
+                      <SelectItem value="2">Cycle 2</SelectItem>
+                      <SelectItem value="3">Cycle 3</SelectItem>
+                      <SelectItem value="4">Cycle 4</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {errors.cycle && (
                     <p className="text-red-500 text-sm mt-1">
                       {errors.cycle.message}
@@ -262,16 +301,15 @@ const UECreatePage = () => {
 
               <div>
                 <Label htmlFor="section">Section</Label>
-                <Select onValueChange={handleSectionChange}>
+                <Select
+                  onValueChange={handleSectionChange}
+                  disabled={isSubmitting}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner une section" />
                   </SelectTrigger>
                   <SelectContent>
-                    {isLoading ? (
-                      <SelectItem value="loading" disabled>
-                        Chargement des sections...
-                      </SelectItem>
-                    ) : sections.length > 0 ? (
+                    {sections.length > 0 ? (
                       sections.map((section) => (
                         <SelectItem
                           key={section.id.toString()}
@@ -307,6 +345,7 @@ const UECreatePage = () => {
                         ]);
                       }
                     }}
+                    disabled={isSubmitting}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner des prérequis" />
@@ -355,6 +394,7 @@ const UECreatePage = () => {
                                   selectedPrerequisites.filter((p) => p !== id)
                                 );
                               }}
+                              disabled={isSubmitting}
                             >
                               <X className="h-3 w-3" />
                             </Button>
@@ -368,9 +408,22 @@ const UECreatePage = () => {
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                Créer l'UE
+              <Button
+                type="submit"
+                className="flex items-center gap-2"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                    <span>Création en cours...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    <span>Créer l'UE</span>
+                  </>
+                )}
               </Button>
             </div>
           </form>

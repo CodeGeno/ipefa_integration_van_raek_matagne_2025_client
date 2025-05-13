@@ -4,7 +4,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AccountRoleEnum } from "@/model/enum/account-role.enum";
 import { GenderEnum } from "@/model/enum/gender.enum";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useForm } from "react-hook-form";
 import { PersonalInfoForm } from "./PersonalInfoForm";
@@ -22,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { post } from "@/app/fetch";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, Loader2, Shield } from "lucide-react";
 
@@ -39,7 +46,6 @@ export const EmployeeCreationForm: React.FC = () => {
         birthDate: new Date(),
         gender: undefined,
         phoneNumber: "",
-        identifier: "EMP-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
       },
       address: {
         street: "",
@@ -61,10 +67,11 @@ export const EmployeeCreationForm: React.FC = () => {
   }, [form.formState.errors]);
 
   const onSubmit = async (data: EmployeeFormData) => {
-    setIsSubmitting(true);
+    if (isSubmitting) return;
 
     try {
-      let formattedData = {
+      setIsSubmitting(true);
+      const formattedData = {
         ...data,
         contactDetails: {
           ...data.contactDetails,
@@ -74,104 +81,96 @@ export const EmployeeCreationForm: React.FC = () => {
 
       const response = await post("/security/create-employee/", formattedData);
 
-      if (response.success !== true) {
-        toast({
-          title: "Erreur",
-          description: response.message,
-          variant: "destructive",
+      if (response.success) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        setIsSubmitting(false);
+        toast.success("Employé créé avec succès", {
+          description: `L'employé ${data.contactDetails.firstName} ${data.contactDetails.lastName} a été créé avec succès. Vous allez être redirigé...`,
+          duration: 3000,
+          icon: <BadgeCheck className="h-5 w-5 text-green-500" />,
         });
-        return;
+        router.push("/employee/list");
       } else {
-        toast({
-          title: "Succès",
-          description: "Le compte employé a été créé avec succès",
-        });
-
-        setTimeout(() => {
-          router.push("/employee/list");
-        }, 1500);
+        throw new Error(response.message || "Une erreur est survenue");
       }
     } catch (error) {
-      console.error("Erreur:", error);
-      toast({
-        title: "Erreur",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Une erreur est survenue lors de la création du compte",
-        variant: "destructive",
-      });
-    } finally {
       setIsSubmitting(false);
+      toast.error("Erreur lors de la création", {
+        description:
+          "Une erreur est survenue lors de la création de l'employé. Veuillez réessayer.",
+        duration: 5000,
+      });
     }
   };
 
   return (
-    <Card className="border-none shadow-lg">
-      <CardContent className="p-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Création d'un employé</CardTitle>
+      </CardHeader>
+      <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <Card>
-              <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Rôle de l&apos;employé
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <Select
-                  onValueChange={(value) =>
-                    form.setValue("role", value as AccountRoleEnum)
-                  }
-                  defaultValue={AccountRoleEnum.EDUCATOR}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez un rôle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(AccountRoleEnum)
-                      .filter((r) => r !== "STUDENT")
-                      .map((role) => {
-                        const roleKey = role as keyof typeof AccountRoleEnum;
-                        return (
-                          <SelectItem key={role} value={role}>
-                            {AccountRoleEnum[roleKey]}
-                          </SelectItem>
-                        );
-                      })}
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid gap-6">
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rôle</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner un rôle" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.keys(AccountRoleEnum)
+                          .filter((role) => role !== "STUDENT")
+                          .map((role) => (
+                            <SelectItem key={role} value={role}>
+                              {
+                                AccountRoleEnum[
+                                  role as keyof typeof AccountRoleEnum
+                                ]
+                              }
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <PersonalInfoForm control={form.control} isEditing={false} />
-            <AddressForm control={form.control} />
+              <PersonalInfoForm
+                control={form.control}
+                isEditing={false}
+                disabled={isSubmitting}
+              />
+              <AddressForm control={form.control} disabled={isSubmitting} />
+            </div>
 
-            <div className="flex justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push("/employee/list")}
-              >
-                Annuler
-              </Button>
+            <div className="flex justify-end pt-4">
               <Button
                 type="submit"
-                disabled={isSubmitting || !form.formState.isValid}
-                className="min-w-[200px]"
+                className="flex items-center gap-2"
+                disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Création en cours...
-                  </>
-                ) : form.formState.isValid ? (
-                  <>
-                    <BadgeCheck className="mr-2 h-4 w-4" />
-                    Créer l&apos;employé
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                    <span>Enregistrement...</span>
                   </>
                 ) : (
-                  "Veuillez remplir tous les champs"
+                  <>
+                    <Shield className="h-4 w-4" />
+                    <span>Enregistrer</span>
+                  </>
                 )}
               </Button>
             </div>

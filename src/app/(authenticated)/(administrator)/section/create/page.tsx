@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,10 +28,12 @@ import { post } from "@/app/fetch";
 import { sectionSchema, SectionFormData } from "@/model/schema/section.schema";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Loader2, Save, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
 
 const SectionCreatePage = () => {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<SectionFormData>({
     resolver: zodResolver(sectionSchema),
@@ -44,21 +46,31 @@ const SectionCreatePage = () => {
   });
 
   const onSubmit = async (values: SectionFormData) => {
+    if (isSubmitting) return; // Empêche les soumissions multiples
+
     try {
-      await post("/section/create/", values);
-      toast({
-        title: "Section créée",
-        description: "La section a été créée avec succès",
-      });
-      setTimeout(() => {
+      setIsSubmitting(true);
+      const response = await post("/section/create/", values);
+
+      if (response.success) {
+        // Attendre un peu avant la redirection pour que l'utilisateur voie le message
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        setIsSubmitting(false);
+        toast.success("Section créée avec succès", {
+          description: `La section "${values.name}" a été créée avec succès. Vous allez être redirigé...`,
+          duration: 3000,
+          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+        });
         router.push("/section/list");
-      }, 1500);
+      } else {
+        throw new Error(response.message || "Une erreur est survenue");
+      }
     } catch (error) {
-      toast({
-        title: "Erreur",
+      setIsSubmitting(false);
+      toast.error("Erreur lors de la création", {
         description:
-          "Une erreur est survenue lors de la création de la section",
-        variant: "destructive",
+          "Une erreur est survenue lors de la création de la section. Veuillez réessayer.",
+        duration: 5000,
       });
     }
   };
@@ -77,6 +89,7 @@ const SectionCreatePage = () => {
             variant="outline"
             size="sm"
             className="flex items-center gap-2"
+            disabled={isSubmitting}
           >
             <ArrowLeft className="h-4 w-4" />
             Retour
@@ -102,6 +115,7 @@ const SectionCreatePage = () => {
                         <Input
                           {...field}
                           placeholder="Ex: Bachelier en Informatique"
+                          disabled={isSubmitting}
                         />
                       </FormControl>
                       <FormMessage />
@@ -119,6 +133,7 @@ const SectionCreatePage = () => {
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
+                          disabled={isSubmitting}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -151,10 +166,11 @@ const SectionCreatePage = () => {
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
+                          disabled={isSubmitting}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez un type de cursus" />
+                              <SelectValue placeholder="Sélectionner une catégorie" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -186,6 +202,7 @@ const SectionCreatePage = () => {
                           placeholder="Ex: Cette section est destinée aux étudiants qui souhaitent devenir informaticiens"
                           value={field.value}
                           onChange={field.onChange}
+                          disabled={isSubmitting}
                         />
                       </FormControl>
                       <FormMessage />
@@ -195,9 +212,22 @@ const SectionCreatePage = () => {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" className="flex items-center gap-2">
-                  <Save className="h-4 w-4" />
-                  Enregistrer
+                <Button
+                  type="submit"
+                  className="flex items-center gap-2"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                      <span>Enregistrement...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span>Enregistrer</span>
+                    </>
+                  )}
                 </Button>
               </div>
             </form>

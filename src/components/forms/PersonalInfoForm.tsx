@@ -31,11 +31,13 @@ import DatePicker from "../ui/date-picker";
 interface PersonalInfoFormProps {
   control: Control<any>;
   isEditing: boolean;
+  disabled?: boolean;
 }
 
 export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
   control,
   isEditing = false,
+  disabled = false,
 }) => {
   return (
     <div className="space-y-4">
@@ -47,7 +49,7 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
             <FormItem>
               <FormLabel>Prénom</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} disabled={disabled} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -60,7 +62,7 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
             <FormItem>
               <FormLabel>Nom</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} disabled={disabled} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -92,6 +94,7 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
                       <Button
                         variant="outline"
                         className="w-full pl-3 text-left font-normal"
+                        disabled={disabled}
                       >
                         {field.value ? (
                           format(field.value, "PPP", {
@@ -109,7 +112,9 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
                       selected={field.value}
                       onSelect={field.onChange}
                       disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
+                        date > new Date() ||
+                        date < new Date("1900-01-01") ||
+                        disabled
                       }
                     />
                   </PopoverContent>
@@ -125,7 +130,11 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Genre</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={disabled}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionnez un genre" />
@@ -152,7 +161,7 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
             <FormItem className="md:col-span-2">
               <FormLabel>Numéro de téléphone</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} disabled={disabled} />
               </FormControl>
               <FormMessage />
             </FormItem>
