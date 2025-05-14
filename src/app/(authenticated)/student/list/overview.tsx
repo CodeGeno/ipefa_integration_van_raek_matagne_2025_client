@@ -62,16 +62,12 @@ export default function StudentOverview({
           />
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleSearch} className="flex items-center gap-2">
-            <Search className="h-4 w-4" />
+          <Button onClick={handleSearch}>
+            <Search className="h-4 w-4 mr-1" />
             Rechercher
           </Button>
-          <Button
-            onClick={handleReset}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <RotateCcw className="h-4 w-4" />
+          <Button onClick={handleReset} variant="outline">
+            <RotateCcw className="h-4 w-4 mr-1" />
             Réinitialiser
           </Button>
         </div>

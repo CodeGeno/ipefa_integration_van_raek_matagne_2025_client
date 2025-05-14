@@ -22,7 +22,9 @@ import {
   Building2,
   ClipboardList,
   Settings,
+  LogOut,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const data = {
   navMain: [
@@ -89,6 +91,14 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    router.push("/login");
+  };
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -149,6 +159,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             )}
           </React.Fragment>
         ))}
+
+        <div className="h-px bg-border/40 mx-4 my-2" />
+        <SidebarGroup>
+          <SidebarMenuItem className="list-none">
+            <SidebarMenuButton asChild>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 w-full text-left"
+              >
+                <LogOut className="size-4" />
+                Déconnexion
+              </button>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarRail />
     </Sidebar>

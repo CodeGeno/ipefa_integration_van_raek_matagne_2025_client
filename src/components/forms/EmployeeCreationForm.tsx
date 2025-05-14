@@ -62,7 +62,6 @@ export const EmployeeCreationForm: React.FC = () => {
   useEffect(() => {
     if (process.env.NODE_ENV === "development")
       if (Object.keys(form.formState.errors).length > 0) {
-        console.log("Erreurs de validation:", form.formState.errors);
       }
   }, [form.formState.errors]);
 
