@@ -26,8 +26,8 @@ export default async function StudentPageOverview({
           </p>
         </div>
         <Link href="/student/create">
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
+          <Button className="bg-primary hover:bg-primary/90 transition-colors">
+            <Plus className="h-4 w-4 mr-2" />
             Ajouter un étudiant
           </Button>
         </Link>

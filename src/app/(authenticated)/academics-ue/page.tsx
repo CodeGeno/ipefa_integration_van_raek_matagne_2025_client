@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getPaginated } from "@/app/fetch";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Employee } from "@/model/entity/lessons/employee.entity";
 import { UE } from "@/model/entity/ue/ue.entity";
 import { Section } from "@/model/entity/ue/section.entity";
@@ -26,6 +26,7 @@ import {
   BookOpen,
   Calendar,
   GraduationCap,
+  Pencil,
   Search,
   Users,
 } from "lucide-react";
@@ -35,6 +36,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AccountContext } from "@/app/context";
+import { AccountRoleEnum } from "@/model/enum/account-role.enum";
 
 interface AcademicUE {
   id: number;
@@ -65,6 +68,7 @@ export default function AcademicsUEPage({
   activeOnlyValue: string;
   yearValue: string;
 }) {
+  const { accountData } = useContext(AccountContext);
   const [academicsData, setAcademicsData] =
     useState<ApiPaginatedResponse<AcademicUE[]>>();
   const [sections, setSections] = useState<Section[]>([]);
@@ -433,6 +437,18 @@ export default function AcademicsUEPage({
                         </td>
                         <td className="p-3">
                           <div className="flex justify-end space-x-2">
+                            {accountData.role === "ADMINISTRATOR" && (
+                              <Link href={`/academics-ue/edit/${ue.id}`}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+                                >
+                                  <Pencil className="h-4 w-4 mr-1" />
+                                  Modifier
+                                </Button>
+                              </Link>
+                            )}
                             <Link href={`/academics-ue/lessons/${ue.id}`}>
                               <Button
                                 variant="outline"

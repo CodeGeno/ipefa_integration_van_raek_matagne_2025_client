@@ -22,9 +22,11 @@ import {
 	Building2,
 	ClipboardList,
 	Settings,
+	LogOut,
 } from "lucide-react";
 import { AccountContext } from "@/app/context";
 import { useContext } from "react";
+import { useRouter } from "next/navigation";
 
 // Types pour la structure des liens
 type SidebarSubItem = {
@@ -45,6 +47,7 @@ type SidebarLinksData = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+	const router = useRouter();
 	const AdminLinks: SidebarLinksData = {
 		navMain: [
 			{
@@ -107,6 +110,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				url: "/settings",
 				icon: <Settings className="size-4" />,
 			},
+			{
+				title: "Déconnexion",
+				url: "/logout",
+				icon: <LogOut className="size-4" />,
+			},
 		],
 	};
 
@@ -132,6 +140,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				url: "/academics-ue",
 				icon: <ClipboardList className="size-4" />,
 			},
+			{
+				title: "Déconnexion",
+				url: "/logout",
+				icon: <LogOut className="size-4" />,
+			},
 		],
 	};
 
@@ -146,6 +159,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				title: "Profil",
 				url: "/profile",
 				icon: <UserCircle className="size-4" />,
+			},
+			{
+				title: "Déconnexion",
+				url: "/logout",
+				icon: <LogOut className="size-4" />,
 			},
 		],
 	};
@@ -167,8 +185,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				url: "/academics-ue/",
 				icon: <ClipboardList className="size-4" />,
 			},
+			{
+				title: "Déconnexion",
+				url: "/logout",
+				icon: <LogOut className="size-4" />,
+			},
 		],
 	};
+
+	const { accountData } = useContext(AccountContext);
 
 	const defineLinks = (): SidebarLinksData => {
 		switch (accountData?.role) {
@@ -185,7 +210,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		}
 	};
 
-	const { accountData } = useContext(AccountContext);
 	const data = defineLinks();
 
 	return (
@@ -234,11 +258,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								</>
 							) : (
 								<SidebarMenuItem className="list-none">
-									<SidebarMenuButton asChild>
-										<a
-											href={item.url}
-											className="flex items-center gap-2"
-										>
+									<SidebarMenuButton
+										asChild
+										className="flex items-center gap-2"
+									>
+										<a href={item.url}>
 											{item.icon}
 											{item.title}
 										</a>
@@ -246,13 +270,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								</SidebarMenuItem>
 							)}
 						</SidebarGroup>
-						{index < data.navMain.length - 1 && (
-							<div className="h-px bg-border/40 mx-4 my-2" />
-						)}
 					</React.Fragment>
 				))}
 			</SidebarContent>
-			<SidebarRail />
 		</Sidebar>
 	);
 }

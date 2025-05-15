@@ -46,7 +46,6 @@ const AcademicsUERegisterPage = () => {
 		);
 
 		if (response.success && response.data) {
-			console.log("API Response:", response);
 			setAvailableStudents(response.data);
 		} else {
 			toast.error(response.message);

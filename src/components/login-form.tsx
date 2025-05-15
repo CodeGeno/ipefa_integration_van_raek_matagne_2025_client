@@ -21,6 +21,7 @@ export function LoginForm({
 
 	const { accountData, setAccountData } = useContext(AccountContext);
 	const router = useRouter();
+	const [isLoading, setIsLoading] = useState(false);
 	const [formData, setFormData] = useState<LoginFormProps>({
 		email: "",
 		password: "",
@@ -35,30 +36,49 @@ export function LoginForm({
 	}
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const response = await post<AccountData>("/security/login/", formData);
-		const data = response.data;
-		if (response.success) {
-			localStorage.setItem("token", data?.token ?? "");
-			localStorage.setItem("role", data?.role ?? "");
-			setAccountData({
-				role: data?.role ?? "",
-				token: data?.token ?? "",
-			});
-			toast({
-				title: "Connexion réussie",
-				description: "Vous êtes connecté avec succès",
-			});
-			setTimeout(() => {
-				console.log("push");
-				router.push("/");
-			}, 1500);
-		} else {
+		setIsLoading(true);
+
+		try {
+			const response = await post<AccountData>(
+				"/security/login/",
+				formData
+			);
+			const data = response.data;
+
+			if (response.success) {
+				localStorage.setItem("token", data?.token ?? "");
+				localStorage.setItem("role", data?.role ?? "");
+				setAccountData({
+					role: data?.role ?? "",
+					token: data?.token ?? "",
+				});
+
+				toast({
+					title: "Connexion réussie",
+					description: "Vous êtes connecté avec succès",
+				});
+
+				setTimeout(() => {
+					router.push("/");
+				}, 1500);
+			} else {
+				toast({
+					title: "Erreur de connexion",
+					description:
+						"Veuillez vérifier votre adresse email et votre mot de passe",
+					variant: "destructive",
+				});
+				setIsLoading(false);
+			}
+		} catch (error) {
+			console.error("Erreur de connexion:", error);
 			toast({
 				title: "Erreur de connexion",
 				description:
-					"Veuillez vérifier votre adresse email et votre mot de passe",
+					"Une erreur s'est produite lors de la connexion. Veuillez réessayer.",
 				variant: "destructive",
 			});
+			setIsLoading(false);
 		}
 	};
 	const { toast } = useToast();
@@ -91,6 +111,7 @@ export function LoginForm({
 									required
 									value={formData.email}
 									onChange={handleChange}
+									disabled={isLoading}
 								/>
 							</div>
 							<div className="grid gap-2">
@@ -110,17 +131,26 @@ export function LoginForm({
 									required
 									value={formData.password}
 									onChange={handleChange}
+									disabled={isLoading}
 								/>
 							</div>
 							<Button
 								type="submit"
 								className="w-full"
+								disabled={isLoading}
 							>
-								Connexion
+								{isLoading ? (
+									<div className="flex items-center justify-center">
+										<div className="animate-spin rounded-full h-5 w-5 border-2 border-current border-t-transparent mr-2"></div>
+										Connexion en cours...
+									</div>
+								) : (
+									"Connexion"
+								)}
 							</Button>
 						</div>
 					</form>
-					<div className="relative hidden bg-muted md:block">
+					<div className="relative hidden overflow-hidden md:block">
 						<img
 							src="https://i.pinimg.com/736x/56/59/d3/5659d3cc7968ba91c75f9576625cd553.jpg"
 							alt="Image"

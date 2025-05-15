@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Section } from "@/model/entity/ue/section.entity";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Collapsible,
   CollapsibleContent,
@@ -17,13 +17,25 @@ import {
   BookOpen,
   GraduationCap,
   Clock,
+  Search,
 } from "lucide-react";
 import { UE } from "@/model/entity/ue/ue.entity";
 import { DeleteUEDialog } from "@/components/ue/delete-ue-dialog";
 import { ActivateUEButton } from "@/components/ue/activate-ue-button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import React, { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { createUrlWithParams } from "@/utils/url";
 
 interface ApiSectionItem {
   id: number;
@@ -54,8 +66,7 @@ async function getSections(): Promise<Section[]> {
       sectionCategory: item.sectionCategory,
       description: item.description,
     }));
-  } catch (error) {
-    console.error("Error fetching sections:", error);
+  } catch {
     return [];
   }
 }
@@ -72,19 +83,32 @@ async function getUEs(): Promise<UE[]> {
 
     const responseData = await response.json();
     return responseData.data || [];
-  } catch (error) {
-    console.error("Error fetching UEs:", error);
+  } catch {
     return [];
   }
 }
 
 export default function UEListPage() {
-  const [showActiveOnly, setShowActiveOnly] = useState(true);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [sections, setSections] = useState<Section[]>([]);
   const [ues, setUEs] = useState<UE[]>([]);
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") || ""
+  );
+  const [selectedSection, setSelectedSection] = useState(
+    searchParams.get("section_id") || "all"
+  );
+  const [selectedCycle, setSelectedCycle] = useState(
+    searchParams.get("cycle") || "all"
+  );
+  const [showActiveOnly, setShowActiveOnly] = useState<boolean>(
+    searchParams.get("active_only") !== "false"
+  );
 
   // Load data on component mount
-  React.useEffect(() => {
+  useEffect(() => {
     const loadData = async () => {
       const [sectionsData, uesData] = await Promise.all([
         getSections(),
@@ -108,6 +132,62 @@ export default function UEListPage() {
     );
   };
 
+  // Handle filter application
+  const applyFilters = () => {
+    const filterParams = {
+      search: searchInput,
+      section_id: selectedSection === "all" ? undefined : selectedSection,
+      cycle: selectedCycle === "all" ? undefined : selectedCycle,
+      active_only: showActiveOnly ? "true" : "false",
+    };
+    router.push(createUrlWithParams("/ue", filterParams));
+  };
+
+  // Handle filter reset
+  const resetFilters = () => {
+    setSearchInput("");
+    setSelectedSection("all");
+    setSelectedCycle("all");
+    setShowActiveOnly(true);
+    router.push("/ue");
+  };
+
+  // Handle key down event for search
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") applyFilters();
+  };
+
+  // Filter UEs based on search input
+  const filteredUEs = ues.filter((ue) => {
+    // Filter by search term (case insensitive)
+    if (
+      searchInput &&
+      !ue.name.toLowerCase().includes(searchInput.toLowerCase())
+    ) {
+      return false;
+    }
+
+    // Filter by section
+    if (
+      selectedSection !== "all" &&
+      ue.section.toString() !== selectedSection
+    ) {
+      return false;
+    }
+
+    // Filter by cycle
+    if (selectedCycle !== "all" && ue.cycle.toString() !== selectedCycle) {
+      return false;
+    }
+
+    // Filter by active status
+    if (showActiveOnly && !ue.isActive) {
+      return false;
+    }
+
+    return true;
+  });
+
   // Group UEs by section and then by cycle
   const uesBySection: Record<number, Record<number, UE[]>> = {};
 
@@ -117,10 +197,9 @@ export default function UEListPage() {
   });
 
   // Add UEs to their respective sections and cycles
-  ues.forEach((ue: UE) => {
+  filteredUEs.forEach((ue: UE) => {
     // Skip if section doesn't exist
     if (!uesBySection[Number(ue.section)]) {
-      console.log(`Section ${ue.section} not found for UE ${ue.id}`);
       return;
     }
 
@@ -128,16 +207,13 @@ export default function UEListPage() {
       uesBySection[Number(ue.section)][ue.cycle] = [];
     }
 
-    // Only add the UE if it's active or if we're showing all UEs
-    if (ue.isActive || !showActiveOnly) {
-      uesBySection[Number(ue.section)][ue.cycle].push(ue);
-    }
+    uesBySection[Number(ue.section)][ue.cycle].push(ue);
   });
 
-  // Debug logs
-  console.log("Sections:", sections);
-  console.log("UEs:", ues);
-  console.log("UEs by Section:", uesBySection);
+  // Get unique cycles from UEs for the filter dropdown
+  const uniqueCycles = [...new Set(ues.map((ue) => ue.cycle))].sort(
+    (a, b) => a - b
+  );
 
   return (
     <div className="container mx-auto p-4 space-y-8">
@@ -145,28 +221,99 @@ export default function UEListPage() {
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">Liste des UEs</h1>
           <p className="text-muted-foreground">
-            Gérez les unités d'enseignement de votre établissement
+            Gérez les unités d&apos;enseignement de votre établissement
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center space-x-2 bg-slate-50 p-2 rounded-lg">
-            <Switch
-              id="active-filter"
-              checked={showActiveOnly}
-              onCheckedChange={setShowActiveOnly}
-            />
-            <Label htmlFor="active-filter" className="text-sm font-medium">
-              UEs actives uniquement
-            </Label>
-          </div>
-          <Link href="/ue/create">
-            <Button className="bg-primary hover:bg-primary/90 transition-colors">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Ajouter une UE
-            </Button>
-          </Link>
-        </div>
+        <Link href="/ue/create">
+          <Button className="bg-primary hover:bg-primary/90 transition-colors">
+            <BookOpen className="w-4 h-4 mr-2" />
+            Ajouter une UE
+          </Button>
+        </Link>
       </div>
+
+      {/* Filters Card */}
+      <Card className="shadow-sm">
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Recherche</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher une UE..."
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Section</Label>
+                <Select
+                  value={selectedSection}
+                  onValueChange={setSelectedSection}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez une section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les sections</SelectItem>
+                    {sections.map((section) => (
+                      <SelectItem
+                        key={section.id}
+                        value={section.id.toString()}
+                      >
+                        {section.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Cycle</Label>
+                <Select value={selectedCycle} onValueChange={setSelectedCycle}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez un cycle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les cycles</SelectItem>
+                    {uniqueCycles.map((cycle) => (
+                      <SelectItem key={cycle} value={cycle.toString()}>
+                        Cycle {cycle}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 bg-slate-50 p-2 rounded-lg">
+                <Switch
+                  id="active-filter"
+                  checked={showActiveOnly}
+                  onCheckedChange={setShowActiveOnly}
+                />
+                <Label htmlFor="active-filter" className="text-sm font-medium">
+                  UEs actives uniquement
+                </Label>
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={resetFilters}>
+                  Réinitialiser
+                </Button>
+                <Button onClick={applyFilters}>Filtrer</Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="space-y-6">
         {sections.map((section: Section) => {

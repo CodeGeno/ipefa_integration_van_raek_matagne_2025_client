@@ -230,56 +230,67 @@ const SectionRegistrationPage = () => {
 									</FormItem>
 								)}
 							/>
-							{selectedSectionType && (
-								<FormField
-									control={form.control}
-									name="cycle"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Cycle</FormLabel>
-											<Select
-												onValueChange={field.onChange}
-												defaultValue={field.value}
-											>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue placeholder="Sélectionnez un cycle" />
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													{Array.from(
-														{
-															length:
-																selectedSectionType ===
-																SectionTypeEnum.BACHELOR
-																	? 3
-																	: 5,
-														},
-														(_, i) => i + 1
-													).map((cycle) => (
-														<SelectItem
-															key={cycle}
-															value={cycle.toString()}
-														>
-															{cycle}
+
+							<FormField
+								control={form.control}
+								name="cycle"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Cycle</FormLabel>
+										<Select
+											onValueChange={field.onChange}
+											defaultValue={field.value}
+											disabled={!selectedSectionType}
+										>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Sélectionnez un cycle" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{selectedSectionType ===
+													SectionTypeEnum.BACHELOR && (
+													<>
+														<SelectItem value="1">
+															Bloc 1
 														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							)}
+														<SelectItem value="2">
+															Bloc 2
+														</SelectItem>
+														<SelectItem value="3">
+															Bloc 3
+														</SelectItem>
+													</>
+												)}
+												{selectedSectionType ===
+													SectionTypeEnum.MASTER && (
+													<>
+														<SelectItem value="1">
+															Master 1
+														</SelectItem>
+														<SelectItem value="2">
+															Master 2
+														</SelectItem>
+													</>
+												)}
+												{!selectedSectionType && (
+													<SelectItem
+														value=""
+														disabled
+													>
+														Sélectionnez d'abord une
+														section
+													</SelectItem>
+												)}
+											</SelectContent>
+										</Select>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 						</div>
-						<div className="flex justify-end">
-							<Button
-								type="submit"
-								size="lg"
-							>
-								Inscrire l'étudiant
-							</Button>
-						</div>
+
+						<Button type="submit">Inscrire à la section</Button>
 					</form>
 				</Form>
 			</CardContent>

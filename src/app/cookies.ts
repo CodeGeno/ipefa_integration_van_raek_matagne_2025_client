@@ -16,28 +16,14 @@ export const getCookieString = async (): Promise<Headers> => {
       .join("; ");
 
     if (cookieString) {
-      console.log("Cookies du serveur:", cookieString);
       headers.set("Cookie", cookieString);
-    } else {
-      console.log("Aucun cookie trouvé côté serveur");
     }
 
     // Essayons de récupérer le token côté client si possible
     try {
-      const clientToken = getClientCookie("token");
-      if (clientToken) {
-        console.log("Token client trouvé:", clientToken);
-      } else {
-        console.log("Aucun token côté client");
-      }
-    } catch (e) {
-      console.log(
-        "Impossible de lire les cookies côté client depuis le serveur"
-      );
-    }
-  } catch (error) {
-    console.error("Erreur lors de la récupération des cookies:", error);
-  }
+      getClientCookie("token");
+    } catch {}
+  } catch {}
 
   return headers;
 };

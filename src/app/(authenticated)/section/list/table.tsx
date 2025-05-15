@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Pencil, Trash2, BookOpen, GraduationCap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { createUrlWithParams } from "@/utils/url";
 
 interface SectionTableProps {
 	sections: Section[];

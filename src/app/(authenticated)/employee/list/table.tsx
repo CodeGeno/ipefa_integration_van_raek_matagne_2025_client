@@ -9,15 +9,68 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Mail, Phone, User } from "lucide-react";
+import { ArrowUpDown, Edit, Mail, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { AccountTypeEnum } from "@/model/enum/account-type.enum";
+import { useState } from "react";
 
 export const EmployeeTable: React.FC<{
 	employeesData: Employee[];
 }> = ({ employeesData }) => {
 	const router = useRouter();
+	const [sortField, setSortField] = useState<string | null>(null);
+	const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+	const handleSort = (field: string) => {
+		// If clicking on the same field, toggle direction
+		if (sortField === field) {
+			setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+		} else {
+			// New field, set to ascending by default
+			setSortField(field);
+			setSortDirection("asc");
+		}
+	};
+
+	const sortedData = [...employeesData].sort((a, b) => {
+		if (!sortField) return 0;
+
+		let valueA, valueB;
+
+		// Determine which field to sort by
+		switch (sortField) {
+			case "matricule":
+				valueA = a.matricule.toLowerCase();
+				valueB = b.matricule.toLowerCase();
+				break;
+			case "firstName":
+				valueA = a.contactDetails.firstName.toLowerCase();
+				valueB = b.contactDetails.firstName.toLowerCase();
+				break;
+			case "lastName":
+				valueA = a.contactDetails.lastName.toLowerCase();
+				valueB = b.contactDetails.lastName.toLowerCase();
+				break;
+			case "email":
+				valueA = a.email.toLowerCase();
+				valueB = b.email.toLowerCase();
+				break;
+			case "role":
+				valueA = a.role.toLowerCase();
+				valueB = b.role.toLowerCase();
+				break;
+			default:
+				return 0;
+		}
+
+		// Sort based on direction
+		if (sortDirection === "asc") {
+			return valueA > valueB ? 1 : -1;
+		} else {
+			return valueA < valueB ? 1 : -1;
+		}
+	});
 
 	const getRoleBadgeColor = (role: string) => {
 		switch (role) {
@@ -38,16 +91,56 @@ export const EmployeeTable: React.FC<{
 			<Table>
 				<TableHeader>
 					<TableRow>
-						<TableHead className="w-[100px]">Matricule</TableHead>
-						<TableHead>Prénom</TableHead>
-						<TableHead>Nom</TableHead>
-						<TableHead>Email</TableHead>
-						<TableHead>Rôle</TableHead>
+						<TableHead
+							className="w-[100px] cursor-pointer hover:bg-slate-100 transition-colors"
+							onClick={() => handleSort("matricule")}
+						>
+							<div className="flex items-center">
+								Matricule
+								<ArrowUpDown className="h-4 w-4 ml-1" />
+							</div>
+						</TableHead>
+						<TableHead
+							className="cursor-pointer hover:bg-slate-100 transition-colors"
+							onClick={() => handleSort("firstName")}
+						>
+							<div className="flex items-center">
+								Prénom
+								<ArrowUpDown className="h-4 w-4 ml-1" />
+							</div>
+						</TableHead>
+						<TableHead
+							className="cursor-pointer hover:bg-slate-100 transition-colors"
+							onClick={() => handleSort("lastName")}
+						>
+							<div className="flex items-center">
+								Nom
+								<ArrowUpDown className="h-4 w-4 ml-1" />
+							</div>
+						</TableHead>
+						<TableHead
+							className="cursor-pointer hover:bg-slate-100 transition-colors"
+							onClick={() => handleSort("email")}
+						>
+							<div className="flex items-center">
+								Email
+								<ArrowUpDown className="h-4 w-4 ml-1" />
+							</div>
+						</TableHead>
+						<TableHead
+							className="cursor-pointer hover:bg-slate-100 transition-colors"
+							onClick={() => handleSort("role")}
+						>
+							<div className="flex items-center">
+								Rôle
+								<ArrowUpDown className="h-4 w-4 ml-1" />
+							</div>
+						</TableHead>
 						<TableHead className="text-right">Actions</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{employeesData?.map((employee) => (
+					{sortedData?.map((employee) => (
 						<TableRow
 							key={employee.matricule}
 							className="hover:bg-muted/50"
