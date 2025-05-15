@@ -31,6 +31,7 @@ import { AccountContext } from "@/app/context";
 import { useContext } from "react";
 import { AccountRoleEnum } from "@/model/enum/account-role.enum";
 import { cn } from "@/lib/utils";
+import { Metadata } from "next";
 
 interface AttendanceData {
   students: Student[];
