@@ -40,7 +40,10 @@ export function LoginForm({
 		if (response.success) {
 			localStorage.setItem("token", data?.token ?? "");
 			localStorage.setItem("role", data?.role ?? "");
-
+			setAccountData({
+				role: data?.role ?? "",
+				token: data?.token ?? "",
+			});
 			toast({
 				title: "Connexion réussie",
 				description: "Vous êtes connecté avec succès",

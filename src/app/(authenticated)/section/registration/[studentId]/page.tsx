@@ -74,7 +74,7 @@ const SectionRegistrationPage = () => {
 
 	const onSubmit = async (values: z.infer<typeof formSchema>) => {
 		try {
-			const response = await post("/ue-management/section/register/", {
+			const response = await post(`/ue-management/register-section/`, {
 				studentId: studentId,
 				sectionId: values.sectionId,
 				cycle: parseInt(values.cycle),
