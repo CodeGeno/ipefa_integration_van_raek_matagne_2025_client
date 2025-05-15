@@ -77,11 +77,7 @@ const data = {
       url: "/presences",
       icon: <Calendar className="size-4" />,
     },
-    {
-      title: "Profil",
-      url: "/profile",
-      icon: <UserCircle className="size-4" />,
-    },
+
     {
       title: "Paramètres",
       url: "/settings",
