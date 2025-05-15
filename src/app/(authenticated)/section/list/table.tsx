@@ -1,3 +1,4 @@
+"use client";
 import CustomAlertDialog from "@/app/custom-alert-dialog";
 import { del } from "@/app/fetch";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,8 @@ import { Pencil, Trash2, BookOpen, GraduationCap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { createUrlWithParams } from "@/utils/url";
-
+import { useContext } from "react";
+import { AccountContext } from "@/app/context";
 interface SectionTableProps {
 	sections: Section[];
 }
@@ -21,6 +23,7 @@ const SectionTable: React.FC<SectionTableProps> = ({
 	sections: Section[];
 }) => {
 	const router = useRouter();
+	const { accountData } = useContext(AccountContext);
 	const deleteSection = async (sectionId: string) => {
 		try {
 			const response = await del(`/section/delete/${sectionId}/`);
@@ -129,33 +132,39 @@ const SectionTable: React.FC<SectionTableProps> = ({
 									Détail
 								</Button>
 							</Link>
-							<Button
-								variant="outline"
-								size="sm"
-								className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
-								onClick={() =>
-									router.push(`/section/edit/${section.id}`)
-								}
-							>
-								<Pencil className="h-4 w-4" />
-								Modifier
-							</Button>
-							<CustomAlertDialog
-								title="Supprimer la section"
-								description="Êtes-vous sûr de vouloir supprimer cette section ? Cette action est irréversible."
-								actionButtonAction={() =>
-									deleteSection(section.id.toString())
-								}
-							>
+							{accountData?.role === "ADMINISTRATOR" && (
 								<Button
-									variant="ghost"
+									variant="outline"
 									size="sm"
-									className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+									className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
+									onClick={() =>
+										router.push(
+											`/section/edit/${section.id}`
+										)
+									}
 								>
-									<Trash2 className="h-4 w-4" />
-									Supprimer
+									<Pencil className="h-4 w-4" />
+									Modifier
 								</Button>
-							</CustomAlertDialog>
+							)}
+							{accountData?.role === "ADMINISTRATOR" && (
+								<CustomAlertDialog
+									title="Supprimer la section"
+									description="Êtes-vous sûr de vouloir supprimer cette section ? Cette action est irréversible."
+									actionButtonAction={() =>
+										deleteSection(section.id.toString())
+									}
+								>
+									<Button
+										variant="ghost"
+										size="sm"
+										className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+									>
+										<Trash2 className="h-4 w-4" />
+										Supprimer
+									</Button>
+								</CustomAlertDialog>
+							)}
 						</div>
 					</div>
 				</div>

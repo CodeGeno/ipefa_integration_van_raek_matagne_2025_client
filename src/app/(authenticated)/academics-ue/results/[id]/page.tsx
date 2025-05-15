@@ -16,6 +16,14 @@ import {
 	ArrowUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 
 export default function ResultsPage({
 	params,
@@ -140,7 +148,6 @@ export default function ResultsPage({
 			</div>
 		);
 	}
-
 	return (
 		<div className="container mx-auto p-4 space-y-6">
 			<div className="flex justify-between items-center">
@@ -185,11 +192,11 @@ export default function ResultsPage({
 						</h2>
 						{academicUE.students.length > 0 ? (
 							<div className="border rounded-lg overflow-hidden">
-								<table className="min-w-full">
-									<thead className="bg-slate-50">
-										<tr>
-											<th
-												className="px-6 py-4 text-left text-sm font-medium text-slate-500 cursor-pointer hover:bg-slate-100 transition-colors"
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead
+												className="cursor-pointer hover:bg-slate-100 transition-colors"
 												onClick={() =>
 													requestSort(
 														"contactDetails"
@@ -203,82 +210,72 @@ export default function ResultsPage({
 														"contactDetails"
 													)}
 												</div>
-											</th>
-											<th className="px-6 py-4 text-left text-sm font-medium text-slate-500">
+											</TableHead>
+											<TableHead>
 												<div className="flex items-center gap-2">
 													<Users className="h-4 w-4" />
 													Prénom
 												</div>
-											</th>
-											<th className="px-6 py-4 text-left text-sm font-medium text-slate-500">
+											</TableHead>
+											<TableHead>
 												<div className="flex items-center gap-2">
 													<Clock className="h-4 w-4" />
 													Identifiant
 												</div>
-											</th>
-											<th className="px-6 py-4 text-left text-sm font-medium text-slate-500">
+											</TableHead>
+											<TableHead>
 												<div className="flex items-center gap-2">
 													<BookOpen className="h-4 w-4" />
 													Email
 												</div>
-											</th>
-											<th className="px-6 py-4 text-right text-sm font-medium text-slate-500">
-												Actions
-											</th>
-										</tr>
-									</thead>
-									<tbody>
+											</TableHead>
+											<TableHead className="flex items-center gap-2">
+												Résultats
+											</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
 										{sortedStudents.map(
 											(student: Student) => (
-												<tr
-													key={student.id}
-													className="border-t hover:bg-slate-50 transition-colors"
-												>
-													<td className="px-6 py-4 font-medium">
+												<TableRow key={student.id}>
+													<TableCell className="font-medium">
 														{
 															student
 																.contactDetails
 																.lastName
 														}
-													</td>
-													<td className="px-6 py-4">
+													</TableCell>
+													<TableCell>
 														{
 															student
 																.contactDetails
 																.firstName
 														}
-													</td>
-													<td className="px-6 py-4">
-														{
-															student
-																.contactDetails
-																.identifier
-														}
-													</td>
-													<td className="px-6 py-4">
+													</TableCell>
+													<TableCell>
+														{student.identifier}
+													</TableCell>
+													<TableCell>
 														{student.email}
-													</td>
-													<td className="px-6 py-4">
-														<div className="flex justify-end">
-															<Button
-																onClick={() =>
-																	handleViewResults(
-																		student
-																	)
-																}
-																className="bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors"
-															>
-																<GraduationCap className="h-4 w-4 mr-2" />
-																Gérer les
-																résultats
-															</Button>
-														</div>
-													</td>
-												</tr>
+													</TableCell>
+													<TableCell>
+														<Button
+															onClick={() =>
+																handleViewResults(
+																	student
+																)
+															}
+															className="bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors"
+														>
+															<GraduationCap className="h-4 w-4 mr-2" />
+															Gérer les résultats
+														</Button>
+													</TableCell>
+												</TableRow>
 											)
 										)}
-									</tbody>
-								</table>
+									</TableBody>
+								</Table>
 							</div>
 						) : (
 							<div className="text-center py-8 bg-slate-50 rounded-lg">
@@ -297,6 +294,7 @@ export default function ResultsPage({
 					onClose={() => setSelectedStudent(null)}
 					academicUEId={academicUE.id}
 					studentId={selectedStudent.id}
+					ue={academicUE.ue}
 				/>
 			)}
 		</div>
