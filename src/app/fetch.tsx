@@ -7,7 +7,6 @@ import {
 	ApiPaginatedResponse,
 } from "@/model/api/api.response";
 import { BASE_URL } from "@/lib/url";
-import { PaginationWithSearch } from "@/model/common/pagination.interface";
 // src/app/fetch.ts
 const myFetch = async <T,>(
 	url: string,
@@ -52,7 +51,7 @@ const getPaginated = async <T,>(
 	options?: RequestInit
 ): Promise<ApiPaginatedResponse<T>> => {
 	const token = localStorage.getItem("token");
-
+	console.log("token", token);
 	try {
 		const response = await fetch(BASE_URL + url, {
 			...options,
@@ -61,7 +60,9 @@ const getPaginated = async <T,>(
 				Authorization: `Bearer ${token}`,
 			},
 		});
+
 		const data = await response.json();
+		console.log(data);
 		return data as ApiPaginatedResponse<T>;
 	} catch (error) {
 		console.log(error);

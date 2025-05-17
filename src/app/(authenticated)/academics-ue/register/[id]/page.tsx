@@ -16,15 +16,21 @@ import { Student } from "@/model/entity/users/student.entity";
 import { toast } from "sonner";
 import { createUrlWithParams } from "@/utils/url";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 enum RegistrationStatus {
-	APPROVED = "AP",
-	REJECTED = "NP",
+	"AP" = "Approuvé",
+	"NP" = "Non approuvé",
 }
-
+interface StudentRegistration extends Student {
+	status: keyof typeof RegistrationStatus;
+}
 const AcademicsUERegisterPage = () => {
 	const { id } = useParams();
 	const [academicUE, setAcademicUE] = useState<AcademicUE>();
-	const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
+	const [availableStudents, setAvailableStudents] = useState<
+		StudentRegistration[]
+	>([]);
 	const [searchValue, setSearchValue] = useState<string>("");
 	const fetchAcademicUE = async () => {
 		const response = await get<AcademicUE>(
@@ -38,7 +44,7 @@ const AcademicsUERegisterPage = () => {
 	};
 
 	const fetchAvailableStudents = async () => {
-		const response = await get<Student[]>(
+		const response = await get<StudentRegistration[]>(
 			createUrlWithParams(
 				`/ue-management/academic-ues/registration/students/${id}/`,
 				{ search: searchValue }
@@ -46,6 +52,7 @@ const AcademicsUERegisterPage = () => {
 		);
 
 		if (response.success && response.data) {
+			console.log("response.data", response.data);
 			setAvailableStudents(response.data);
 		} else {
 			toast.error(response.message);
@@ -98,10 +105,21 @@ const AcademicsUERegisterPage = () => {
 			{academicUE && (
 				<>
 					<div className="container mx-auto py-6 px-4">
-						<h1 className="text-2xl font-bold mb-6">
-							Inscription à l'UE : {academicUE.ue.name}
-						</h1>
-
+						<div className="flex justify-between">
+							<h1 className="text-2xl font-bold mb-6">
+								Inscription à l'UE : {academicUE.ue.name}
+							</h1>
+							<Link href="/academics-ue">
+								<Button
+									variant="outline"
+									size="sm"
+									className="flex items-center gap-2"
+								>
+									<ArrowLeft className="h-4 w-4" />
+									Retour
+								</Button>
+							</Link>
+						</div>
 						<h2 className="text-lg font-bold mb-6">
 							{`Professeur : ${academicUE?.professor.contactDetails.firstName} ${academicUE?.professor.contactDetails.lastName}`}
 						</h2>
@@ -195,18 +213,27 @@ const AcademicsUERegisterPage = () => {
 								<TableBody>
 									{availableStudents.length > 0 &&
 										availableStudents.map(
-											(student: Student) => (
+											(student: StudentRegistration) => (
 												<TableRow key={student.id}>
 													<TableCell className="font-medium whitespace-nowrap">
 														{student.identifier}
 													</TableCell>
 													<TableCell className="whitespace-nowrap">{`${student.contactDetails.firstName} ${student.contactDetails.lastName}`}</TableCell>
 													<TableCell className="whitespace-nowrap">
-														Non inscrit
+														{student.status}
 													</TableCell>
 													<TableCell className="whitespace-nowrap">
 														<Button
-															variant="default"
+															disabled={
+																student.status ===
+																"NP"
+															}
+															variant={
+																student.status ===
+																"AP"
+																	? "default"
+																	: "destructive"
+															}
 															onClick={() =>
 																handleRegisterStudent(
 																	student.id
