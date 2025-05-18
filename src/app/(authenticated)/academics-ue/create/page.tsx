@@ -34,6 +34,15 @@ interface UEOption {
   isActive: boolean;
 }
 
+interface Section {
+  id: number;
+  name: string;
+  sectionType: string;
+  sectionCategory: string;
+  description: string;
+  isActive: boolean;
+}
+
 interface AcademicUE {
   id: number;
   year: number;
@@ -86,14 +95,17 @@ interface FormState {
   sessions?: {
     date: string;
     status: "scheduled" | "completed" | "cancelled";
+    isOverlapping: boolean;
   }[];
 }
 
 export default function CreateAcademicUEPage() {
   const [ueOptions, setUeOptions] = useState<UEOption[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [selectedSection, setSelectedSection] = useState<Section | null>(null);
   const [professors, setProfessors] = useState<Professor[]>([]);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [selectedUE, setSelectedUE] = useState<UEOption | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -105,6 +117,29 @@ export default function CreateAcademicUEPage() {
     year: currentYear.toString(),
   });
 
+  // Mettre à jour la date de fin quand la date de début change
+  useEffect(() => {
+    if (startDate && (!endDate || endDate < startDate)) {
+      setEndDate(startDate);
+    }
+  }, [startDate]);
+
+  const handleStartDateChange = (date: Date | undefined) => {
+    setStartDate(date);
+  };
+
+  const handleEndDateChange = (date: Date | undefined) => {
+    if (date && startDate && date < startDate) {
+      toast.error("Date invalide", {
+        description:
+          "La date de fin ne peut pas être antérieure à la date de début",
+        duration: 3000,
+      });
+      return;
+    }
+    setEndDate(date);
+  };
+
   // Calculate sessions based on periods and dates
   const calculateSessions = (start: Date, end: Date, periods: number) => {
     const sessions = [];
@@ -114,9 +149,14 @@ export default function CreateAcademicUEPage() {
     for (let i = 0; i < numberOfSessions; i++) {
       const sessionDate = new Date(start);
       sessionDate.setDate(start.getDate() + i * DAYS_BETWEEN_SESSIONS);
+
       sessions.push({
-        date: format(sessionDate, "yyyy-MM-dd"),
+        date:
+          sessionDate > end
+            ? format(end, "yyyy-MM-dd")
+            : format(sessionDate, "yyyy-MM-dd"),
         status: "scheduled" as const,
+        isOverlapping: false,
       });
     }
 
@@ -138,12 +178,37 @@ export default function CreateAcademicUEPage() {
     }
   }, [startDate, endDate, selectedUE]);
 
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSectionChange = (value: string) => {
+    const section = sections.find((s) => s.id.toString() === value);
+    setSelectedSection(section || null);
+    setSelectedUE(null);
+    handleChange("ue_id", "");
+  };
+
   const handleUEChange = (value: string) => {
     const ue = ueOptions.find((u) => u.id.toString() === value);
     setSelectedUE(ue || null);
     handleChange("ue_id", value);
     handleChange("professorId", "");
   };
+
+  async function getSections() {
+    try {
+      const response = await get<Section[]>("/section/list/");
+      if (!response.success) {
+        throw new Error(`Error fetching sections: ${response.status}`);
+      }
+      if (response.data) {
+        setSections(response.data.filter((section) => section.isActive));
+      }
+    } catch (error) {
+      console.error("Failed to fetch sections:", error);
+    }
+  }
 
   async function getUEOptions() {
     try {
@@ -163,8 +228,12 @@ export default function CreateAcademicUEPage() {
       }
 
       if (ueResponse.data && academicUEResponse.data) {
-        // Filtrer uniquement les UE actives
-        const activeUEs = ueResponse.data.filter((ue) => ue.isActive);
+        // Filtrer uniquement les UE actives et de la section sélectionnée
+        const activeUEs = ueResponse.data.filter(
+          (ue) =>
+            ue.isActive &&
+            (!selectedSection || ue.section === selectedSection.id)
+        );
 
         // Filtrer les UE qui n'ont pas encore été utilisées pour l'année sélectionnée
         const year = parseInt(formData.year);
@@ -198,15 +267,15 @@ export default function CreateAcademicUEPage() {
   }
 
   useEffect(() => {
+    getSections();
+  }, []);
+
+  useEffect(() => {
     if (formData.year) {
       getUEOptions();
     }
     getProfessors();
-  }, [formData.year]);
-
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  }, [formData.year, selectedSection]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -279,9 +348,27 @@ export default function CreateAcademicUEPage() {
     }
   };
 
-  // Update the DatePicker for sessions to prevent duplicate dates
+  // Vérifier si le formulaire est valide
+  const isFormValid = () => {
+    if (!selectedUE || !startDate || !endDate) return false;
+    if (!formData.sessions || formData.sessions.length === 0) return false;
+
+    // Vérifier s'il y a des dates en double
+    const dates = formData.sessions.map((session) => session.date);
+    const hasDuplicates = dates.some(
+      (date, index) => dates.indexOf(date) !== index
+    );
+
+    // Vérifier s'il y a des dates vides
+    const hasEmptyDates = dates.some((date) => !date);
+
+    return !hasDuplicates && !hasEmptyDates;
+  };
+
   const handleSessionDateChange = (index: number, date: Date | undefined) => {
-    if (date) {
+    if (!date) return;
+
+    try {
       const newSessions = [...(formData.sessions || [])];
       const newDate = format(date, "yyyy-MM-dd");
 
@@ -291,10 +378,17 @@ export default function CreateAcademicUEPage() {
       );
 
       if (isDateUsed) {
-        toast({
-          title: "Erreur de validation",
+        toast.error("Erreur de validation", {
           description: "Cette date est déjà utilisée par une autre séance",
-          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if the date is within the valid range
+      if (startDate && endDate && (date < startDate || date > endDate)) {
+        toast.error("Erreur de validation", {
+          description:
+            "La date doit être comprise entre la date de début et la date de fin",
         });
         return;
       }
@@ -302,11 +396,26 @@ export default function CreateAcademicUEPage() {
       newSessions[index] = {
         ...newSessions[index],
         date: newDate,
+        isOverlapping: false,
       };
+
+      // Check for overlapping dates after the update
+      const updatedSessions = newSessions.map((session, i) => {
+        const isOverlapping = newSessions.some(
+          (otherSession, j) =>
+            i !== j && otherSession.date === session.date && session.date !== "" // Ne pas marquer comme en conflit si la date est vide
+        );
+        return { ...session, isOverlapping };
+      });
+
       setFormData((prev) => ({
         ...prev,
-        sessions: newSessions,
+        sessions: updatedSessions,
       }));
+    } catch (error) {
+      toast.error("Erreur de validation", {
+        description: "La date sélectionnée n'est pas valide",
+      });
     }
   };
 
@@ -345,14 +454,45 @@ export default function CreateAcademicUEPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="ue">Unité d&apos;enseignement</Label>
+                <Label htmlFor="section">Section</Label>
                 <Select
-                  onValueChange={handleUEChange}
+                  onValueChange={handleSectionChange}
                   required
                   disabled={isSubmitting}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Sélectionner une UE" />
+                    <SelectValue placeholder="Sélectionner une section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {sections.map((section) => (
+                        <SelectItem
+                          key={section.id}
+                          value={section.id.toString()}
+                        >
+                          {section.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ue">Unité d&apos;enseignement</Label>
+                <Select
+                  onValueChange={handleUEChange}
+                  required
+                  disabled={isSubmitting || !selectedSection}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      placeholder={
+                        selectedSection
+                          ? "Sélectionner une UE"
+                          : "Sélectionnez d'abord une section"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
@@ -435,10 +575,10 @@ export default function CreateAcademicUEPage() {
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0" align="start">
                     <DatePicker
                       selected={startDate}
-                      onSelect={setStartDate}
+                      onSelect={handleStartDateChange}
                       disabled={isSubmitting}
                     />
                   </PopoverContent>
@@ -462,11 +602,13 @@ export default function CreateAcademicUEPage() {
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0" align="start">
                     <DatePicker
                       selected={endDate}
-                      onSelect={setEndDate}
+                      onSelect={handleEndDateChange}
                       disabled={isSubmitting}
+                      minDate={startDate || undefined}
+                      fromDate={startDate || undefined}
                     />
                   </PopoverContent>
                 </Popover>
@@ -483,7 +625,7 @@ export default function CreateAcademicUEPage() {
 
               {formData.sessions && formData.sessions.length > 0 && (
                 <div className="space-y-2 md:col-span-2">
-                  <div className="flex justify-between items-center">
+                  <div className="flex gap-4 items-center">
                     <Label>Séances planifiées</Label>
                     <Button
                       type="button"
@@ -503,7 +645,7 @@ export default function CreateAcademicUEPage() {
                         }
                       }}
                     >
-                      Recalculer automatiquement
+                      Réinitialiser les séances par défaut
                     </Button>
                   </div>
                   <div className="border rounded-md p-4">
@@ -511,7 +653,11 @@ export default function CreateAcademicUEPage() {
                       {getCurrentPageSessions().map((session, index) => (
                         <div
                           key={index}
-                          className="p-3 bg-gray-50 rounded-md flex items-center justify-between"
+                          className={`p-3 rounded-md flex items-center justify-between ${
+                            session.isOverlapping
+                              ? "bg-red-50 border border-red-200"
+                              : "bg-gray-50"
+                          }`}
                         >
                           <div className="flex items-center gap-4">
                             <span className="font-medium">
@@ -522,12 +668,18 @@ export default function CreateAcademicUEPage() {
                               <PopoverTrigger asChild>
                                 <Button
                                   variant="outline"
-                                  className="w-[200px] pl-3 text-left font-normal"
+                                  className={`w-[200px] pl-3 text-left font-normal ${
+                                    session.isOverlapping
+                                      ? "border-red-300 text-red-600"
+                                      : ""
+                                  }`}
                                   type="button"
                                 >
-                                  {format(new Date(session.date), "PPP", {
-                                    locale: fr,
-                                  })}
+                                  {session.date
+                                    ? format(new Date(session.date), "PPP", {
+                                        locale: fr,
+                                      })
+                                    : "Date à définir"}
                                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                 </Button>
                               </PopoverTrigger>
@@ -551,7 +703,13 @@ export default function CreateAcademicUEPage() {
                               </PopoverContent>
                             </Popover>
                           </div>
-                          <span className="text-sm text-gray-500">
+                          <span
+                            className={`text-sm ${
+                              session.isOverlapping
+                                ? "text-red-500"
+                                : "text-gray-500"
+                            }`}
+                          >
                             {session.status}
                           </span>
                         </div>
@@ -560,6 +718,7 @@ export default function CreateAcademicUEPage() {
                     {totalPages > 1 && (
                       <div className="flex justify-center gap-2 mt-4">
                         <Button
+                          type="button"
                           variant="outline"
                           size="sm"
                           onClick={() =>
@@ -573,6 +732,7 @@ export default function CreateAcademicUEPage() {
                           Page {currentPage} sur {totalPages}
                         </span>
                         <Button
+                          type="button"
                           variant="outline"
                           size="sm"
                           onClick={() =>
@@ -595,17 +755,22 @@ export default function CreateAcademicUEPage() {
               <Button
                 type="submit"
                 className="flex items-center gap-2"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isFormValid()}
               >
                 {isSubmitting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
                     <span>Création en cours...</span>
                   </>
+                ) : !isFormValid() ? (
+                  <>
+                    <Save className="h-4 w-4" />
+                    <span>Dates invalides</span>
+                  </>
                 ) : (
                   <>
                     <Save className="h-4 w-4" />
-                    <span>Créer l'UE académique</span>
+                    <span>Créer l UE académique</span>
                   </>
                 )}
               </Button>

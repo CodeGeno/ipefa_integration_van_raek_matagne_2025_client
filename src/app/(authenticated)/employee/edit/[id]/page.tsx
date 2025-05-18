@@ -2,6 +2,7 @@ import EmployeeForm from "../employee-form";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Toaster } from "@/components/ui/toaster";
 
 const EmployeeEditPage = async ({ params }: { params: { id: string } }) => {
   const { id } = await params;
@@ -24,6 +25,7 @@ const EmployeeEditPage = async ({ params }: { params: { id: string } }) => {
           </div>
         </div>
         <EmployeeForm id={id} isEditing />
+        <Toaster />
       </div>
     </div>
   );

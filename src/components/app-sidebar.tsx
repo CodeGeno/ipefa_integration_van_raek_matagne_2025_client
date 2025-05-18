@@ -51,16 +51,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const AdminLinks: SidebarLinksData = {
     navMain: [
       {
-        title: "Tableau de bord",
-        url: "/",
-        icon: <BookOpen className="size-4" />,
-      },
-      {
-        title: "Profil",
-        url: "/profile",
-        icon: <UserCircle className="size-4" />,
-      },
-      {
         title: "Gestion académique",
         url: "#",
         icon: <GraduationCap className="size-4" />,
@@ -98,11 +88,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             icon: <Users className="size-4" />,
           },
         ],
-      },
-      {
-        title: "Présences",
-        url: "/presences",
-        icon: <Calendar className="size-4" />,
       },
 
       {

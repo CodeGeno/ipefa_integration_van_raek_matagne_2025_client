@@ -25,6 +25,7 @@ interface AcademicUE {
   ue: {
     id: number;
     name: string;
+    periods: number;
   };
   year: number;
   professor: Professor | null;
@@ -267,6 +268,16 @@ export default function EditAcademicUEPage({
                 <Input
                   id="year"
                   value={academicUE.year}
+                  disabled
+                  className="bg-slate-50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="periods">Nombre de périodes</Label>
+                <Input
+                  id="periods"
+                  value={academicUE.ue.periods}
                   disabled
                   className="bg-slate-50"
                 />
