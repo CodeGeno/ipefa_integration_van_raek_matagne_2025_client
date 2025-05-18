@@ -1,5 +1,5 @@
 "use client";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getPaginated } from "@/app/fetch";
@@ -541,18 +541,23 @@ export default function AcademicsUEPage({
 																Résultats
 															</Button>
 														</Link>
-														<Link
-															href={`/academics-ue/register/${ue.id}`}
-														>
-															<Button
-																variant="outline"
-																size="sm"
-																className="bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
-															>
-																<Users className="h-4 w-4 mr-1" />
-																Inscriptions
-															</Button>
-														</Link>
+														{accountData.role ==
+															"ADMINISTRATOR" ||
+															(accountData.role ==
+																"EDUCATOR" && (
+																<Link
+																	href={`/academics-ue/register/${ue.id}`}
+																>
+																	<Button
+																		variant="outline"
+																		size="sm"
+																		className="bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+																	>
+																		<Users className="h-4 w-4 mr-1" />
+																		Inscriptions
+																	</Button>
+																</Link>
+															))}
 													</div>
 												</td>
 											</tr>

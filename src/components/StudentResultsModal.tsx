@@ -117,11 +117,13 @@ export function StudentResultsModal({
 				<div className="mt-4">
 					<div className="flex justify-between items-center mb-4">
 						<h3 className="text-lg font-medium"></h3>
-						{accountData.role !== "PROFESSOR" && (
-							<Button onClick={() => setIsAddModalOpen(true)}>
-								Ajouter un résultat
-							</Button>
-						)}
+						{(accountData.role == "PROFESSOR" ||
+							accountData.role == "ADMINISTRATOR") &&
+							results.length == 0 && (
+								<Button onClick={() => setIsAddModalOpen(true)}>
+									Ajouter un résultat
+								</Button>
+							)}
 					</div>
 
 					{results.length === 0 ? (
@@ -205,23 +207,28 @@ export function StudentResultsModal({
 															Modifier
 														</Button>
 													)}
-													<Button
-														variant="default"
-														size="sm"
-														disabled={
-															result.approved
-														}
-														onClick={() =>
-															handleApproveResult(
-																result.id,
-																result.approved
-															)
-														}
-													>
-														{!result.approved
-															? "Approuver"
-															: "Approuvé"}
-													</Button>
+													{accountData.role ==
+														"EDUCATOR" ||
+														(accountData.role ==
+															"ADMINISTRATOR" && (
+															<Button
+																variant="default"
+																size="sm"
+																disabled={
+																	result.approved
+																}
+																onClick={() =>
+																	handleApproveResult(
+																		result.id,
+																		result.approved
+																	)
+																}
+															>
+																{!result.approved
+																	? "Approuver"
+																	: "Approuvé"}
+															</Button>
+														))}
 												</div>
 											</td>
 										</tr>

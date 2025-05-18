@@ -2,11 +2,9 @@
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { accountSchema, AccountFormData } from "@/model/schema/account.schema";
-import { AccountRoleEnum } from "@/model/enum/account-role.enum";
 import { GenderEnum } from "@/model/enum/gender.enum";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { PersonalInfoForm } from "./PersonalInfoForm";
 import { AddressForm } from "./AddressForm";
@@ -17,7 +15,6 @@ import { jsPDF } from "jspdf";
 import { useForm } from "react-hook-form";
 import { post } from "@/app/fetch";
 import { Account } from "@/model/entity/users/account.entity";
-import { Separator } from "@/components/ui/separator";
 import { User, MapPin, Save, X, BadgeCheck } from "lucide-react";
 
 export const StudentCreationForm: React.FC = () => {
@@ -78,30 +75,178 @@ export const StudentCreationForm: React.FC = () => {
 				const result = response.data as Account;
 				const doc = new jsPDF();
 
-				// Génération du PDF avec les informations du compte
-				doc.text("Informations du compte", 10, 10);
-				doc.text(
-					`Nom: ${result.contactDetails.firstName} ${result.contactDetails.lastName}`,
-					10,
-					20
-				);
-				doc.text(`Email: ${result.email}`, 10, 30);
-				doc.text(
-					`Téléphone: ${result.contactDetails.phoneNumber}`,
-					10,
-					40
-				);
-				doc.text(
-					`Adresse: ${result.address.street}, ${result.address.city}, ${result.address.zipCode}, ${result.address.country}`,
-					10,
-					50
-				);
-				doc.text(`Mot de passe: ${result.password}`, 10, 60);
+				// Ajout des styles et couleurs
+				const titleColor = [0, 102, 204]; // Bleu
+				const subtitleColor = [64, 64, 64]; // Gris foncé
+				const textColor = [0, 0, 0]; // Noir
+				const highlightColor = [255, 102, 0]; // Orange
 
-				// Affichage du PDF
-				doc.output("dataurlnewwindow");
+				// Configuration des marges et de la taille
+				const margin = 20;
+				const pageWidth = doc.internal.pageSize.width;
 
-				router.push("/student/list");
+				// Fonction pour générer le PDF une fois l'image chargée
+				const generatePDF = () => {
+					// Titre principal - plus bas pour laisser de la place au logo
+					doc.setFontSize(24);
+					doc.setTextColor(
+						titleColor[0],
+						titleColor[1],
+						titleColor[2]
+					);
+					doc.setFont("helvetica", "bold");
+					doc.text(
+						"Informations du compte étudiant",
+						pageWidth / 2,
+						margin + 30,
+						{ align: "center" }
+					);
+
+					// Ligne de séparation
+					doc.setDrawColor(
+						titleColor[0],
+						titleColor[1],
+						titleColor[2]
+					);
+					doc.setLineWidth(0.5);
+					doc.line(
+						margin,
+						margin + 35,
+						pageWidth - margin,
+						margin + 35
+					);
+
+					// Informations personnelles - Titre
+					doc.setFontSize(16);
+					doc.setTextColor(
+						subtitleColor[0],
+						subtitleColor[1],
+						subtitleColor[2]
+					);
+					doc.text("Informations personnelles", margin, margin + 50);
+
+					// Informations personnelles - Contenu
+					doc.setFontSize(12);
+					doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+					doc.setFont("helvetica", "normal");
+					doc.text(
+						`Nom: ${result.contactDetails.lastName}`,
+						margin,
+						margin + 65
+					);
+					doc.text(
+						`Prénom: ${result.contactDetails.firstName}`,
+						margin,
+						margin + 75
+					);
+					doc.text(`Email: ${result.email}`, margin, margin + 85);
+					doc.text(
+						`Téléphone: ${result.contactDetails.phoneNumber}`,
+						margin,
+						margin + 95
+					);
+
+					// Adresse - Titre
+					doc.setFontSize(16);
+					doc.setTextColor(
+						subtitleColor[0],
+						subtitleColor[1],
+						subtitleColor[2]
+					);
+					doc.setFont("helvetica", "bold");
+					doc.text("Adresse", margin, margin + 115);
+
+					// Adresse - Contenu
+					doc.setFontSize(12);
+					doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+					doc.setFont("helvetica", "normal");
+					doc.text(
+						`Rue: ${result.address.street}`,
+						margin,
+						margin + 130
+					);
+					doc.text(
+						`Ville: ${result.address.city}`,
+						margin,
+						margin + 140
+					);
+					doc.text(
+						`Code postal: ${result.address.zipCode}`,
+						margin,
+						margin + 150
+					);
+					doc.text(
+						`Pays: ${result.address.country}`,
+						margin,
+						margin + 160
+					);
+
+					// Informations de connexion - Titre
+					doc.setFontSize(16);
+					doc.setTextColor(
+						subtitleColor[0],
+						subtitleColor[1],
+						subtitleColor[2]
+					);
+					doc.setFont("helvetica", "bold");
+					doc.text("Informations de connexion", margin, margin + 180);
+
+					// Informations de connexion - Contenu
+					doc.setFontSize(12);
+					doc.setTextColor(
+						highlightColor[0],
+						highlightColor[1],
+						highlightColor[2]
+					);
+					doc.setFont("helvetica", "bold");
+					doc.text(
+						`Mot de passe initial: ${result.password}`,
+						margin,
+						margin + 195
+					);
+
+					// Note importante
+					doc.setFontSize(10);
+					doc.setTextColor(255, 0, 0); // Rouge
+					doc.text(
+						"Note importante: Veuillez changer votre mot de passe lors de votre première connexion.",
+						margin,
+						margin + 210
+					);
+
+					// Pied de page
+					doc.setFontSize(8);
+					doc.setTextColor(100, 100, 100); // Gris clair
+					doc.text(
+						`Document généré le ${new Date().toLocaleDateString(
+							"fr-BE"
+						)}`,
+						pageWidth / 2,
+						doc.internal.pageSize.height - 10,
+						{ align: "center" }
+					);
+
+					// Affichage du PDF
+					doc.output("dataurlnewwindow");
+				};
+
+				// Gestionnaire pour les erreurs de chargement d'image
+				img.onerror = () => {
+					console.error(
+						"Erreur de chargement du logo, génération du PDF sans logo"
+					);
+					// Générer le PDF sans logo
+					generatePDF();
+				};
+
+				// Démarrer le chargement de l'image
+				img.onload = generatePDF;
+				img.src = logoPath;
+
+				// Redirection après un court délai
+				setTimeout(() => {
+					router.push("/student/list");
+				}, 1000);
 			} else {
 				throw new Error(response.message || "Une erreur est survenue");
 			}
