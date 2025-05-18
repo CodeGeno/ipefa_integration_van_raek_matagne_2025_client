@@ -42,6 +42,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AccountContext } from "@/app/context";
+import { toast } from "sonner";
+import { AttendanceStatusEnum } from "@/model/enum/attendance-status.enum";
 
 interface Lesson {
   id: number;
@@ -55,7 +57,23 @@ interface AcademicUE {
     name: string;
   };
   year: number;
+  start_date: string;
+  end_date: string;
   lessons: Lesson[];
+}
+
+interface Student {
+  id: number;
+  firstname: string;
+  lastname: string;
+}
+
+interface AttendanceSummary {
+  student: Student;
+  attendances: {
+    lesson_date: string;
+    status: keyof typeof AttendanceStatusEnum;
+  }[];
 }
 
 const statusStyles = {
@@ -86,6 +104,11 @@ export default function LessonsPage() {
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+  const [attendanceSummary, setAttendanceSummary] = useState<
+    AttendanceSummary[]
+  >([]);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
 
   const getAcademicUE = async () => {
     try {
@@ -129,7 +152,7 @@ export default function LessonsPage() {
         lesson_date: newDate || lesson.lesson_date,
       });
       if (response.success) {
-        getAcademicUE(); // Recharger les données
+        getAcademicUE();
         setSortConfig({ key: "lesson_date", direction: "asc" });
         setIsDatePickerOpen(false);
         setSelectedDate(undefined);
@@ -143,10 +166,57 @@ export default function LessonsPage() {
   };
 
   const handleDateSelect = (date: Date | undefined) => {
+    if (!date || !academicUE) return;
+
+    // Vérifier si la date est dans la plage de l'UE académique
+    const startDate = new Date(academicUE.start_date);
+    const endDate = new Date(academicUE.end_date);
+
+    if (date < startDate || date > endDate) {
+      toast.error("Date invalide", {
+        description:
+          "La date doit être comprise entre le début et la fin de l'UE académique",
+        duration: 3000,
+      });
+      return;
+    }
+
+    // Vérifier si la date existe déjà
+    const dateExists = academicUE.lessons.some(
+      (lesson) => lesson.lesson_date === format(date, "yyyy-MM-dd")
+    );
+
+    if (dateExists) {
+      toast.error("Date invalide", {
+        description: "Une séance existe déjà à cette date",
+        duration: 3000,
+      });
+      return;
+    }
+
     setSelectedDate(date);
     if (date && selectedLesson) {
       const formattedDate = format(date, "yyyy-MM-dd");
       updateLessonStatus(selectedLesson.id, "REPORTED", formattedDate);
+    }
+  };
+
+  const fetchAttendanceSummary = async () => {
+    try {
+      setIsLoadingSummary(true);
+      const response = await get<AttendanceSummary[]>(
+        `/attendance/summary/${params.id}/`
+      );
+      if (response.success && response.data) {
+        setAttendanceSummary(response.data);
+      } else {
+        throw new Error("Erreur lors du chargement du résumé des présences");
+      }
+    } catch (error) {
+      console.error("Failed to fetch attendance summary:", error);
+      toast.error("Erreur lors du chargement du résumé des présences");
+    } finally {
+      setIsLoadingSummary(false);
     }
   };
 
@@ -212,6 +282,20 @@ export default function LessonsPage() {
     );
   };
 
+  // Calculer les leçons paginées
+  const getPaginatedLessons = () => {
+    if (!academicUE?.lessons) return [];
+    const sortedLessons = sortLessons(academicUE.lessons);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sortedLessons.slice(startIndex, endIndex);
+  };
+
+  // Calculer le nombre total de pages
+  const totalPages = academicUE
+    ? Math.ceil(academicUE.lessons.length / itemsPerPage)
+    : 0;
+
   if (!academicUE) {
     return (
       <div className="container mx-auto p-4">
@@ -235,7 +319,18 @@ export default function LessonsPage() {
                 Retour à la liste des UE
               </Button>
             </Link>
-            <CardTitle>Détails des leçons</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle>Détails des leçons</CardTitle>
+              <Button
+                onClick={() => {
+                  setIsSummaryModalOpen(true);
+                  fetchAttendanceSummary();
+                }}
+                className="flex items-center gap-2"
+              >
+                Résumé des présences
+              </Button>
+            </div>
             <div className="text-sm text-gray-500">
               Nombre total de séances : {academicUE?.lessons.length || 0}
             </div>
@@ -273,74 +368,92 @@ export default function LessonsPage() {
                   {accountData?.role === "ADMINISTRATOR" && (
                     <TableHead>Actions</TableHead>
                   )}
-
                   <TableHead>Présences</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {academicUE?.lessons &&
-                  sortLessons(academicUE.lessons).map((lesson) => (
-                    <TableRow key={lesson.id}>
+                {getPaginatedLessons().map((lesson) => (
+                  <TableRow key={lesson.id}>
+                    <TableCell>
+                      {format(parseISO(lesson.lesson_date), "dd/MM/yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={cn(
+                          "px-3 py-1 rounded-full text-sm font-medium",
+                          statusStyles[
+                            lesson.status as keyof typeof statusStyles
+                          ]
+                        )}
+                      >
+                        {statusLabels[
+                          lesson.status as keyof typeof statusLabels
+                        ] || lesson.status}
+                      </span>
+                    </TableCell>
+                    {accountData?.role === "ADMINISTRATOR" && (
                       <TableCell>
-                        {format(parseISO(lesson.lesson_date), "dd/MM/yyyy")}
+                        <div className="flex gap-2">
+                          <Select
+                            value={lesson.status}
+                            onValueChange={(value) =>
+                              updateLessonStatus(lesson.id, value)
+                            }
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="PROGRAMMED">
+                                Programmé
+                              </SelectItem>
+                              <SelectItem value="REPORTED">Reporté</SelectItem>
+                              <SelectItem value="COMPLETED">Terminé</SelectItem>
+                              <SelectItem value="CANCELLED">Annulé</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </TableCell>
-                      <TableCell>
-                        <span
-                          className={cn(
-                            "px-3 py-1 rounded-full text-sm font-medium",
-                            statusStyles[
-                              lesson.status as keyof typeof statusStyles
-                            ]
-                          )}
-                        >
-                          {statusLabels[
-                            lesson.status as keyof typeof statusLabels
-                          ] || lesson.status}
-                        </span>
-                      </TableCell>
-                      {accountData?.role === "ADMINISTRATOR" && (
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Select
-                              value={lesson.status}
-                              onValueChange={(value) =>
-                                updateLessonStatus(lesson.id, value)
-                              }
-                            >
-                              <SelectTrigger className="w-[180px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="PROGRAMMED">
-                                  Programmé
-                                </SelectItem>
-                                <SelectItem value="REPORTED">
-                                  Reporté
-                                </SelectItem>
-                                <SelectItem value="COMPLETED">
-                                  Terminé
-                                </SelectItem>
-                                <SelectItem value="CANCELLED">
-                                  Annulé
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </TableCell>
-                      )}
-
-                      <TableCell>
-                        <Link href={`/academics-ue/attendance/${lesson.id}`}>
-                          <Button variant="outline" size="sm">
-                            Présences
-                          </Button>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                    )}
+                    <TableCell>
+                      <Link href={`/academics-ue/attendance/${lesson.id}`}>
+                        <Button variant="outline" size="sm">
+                          Présences
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Précédent
+              </Button>
+              <span className="text-sm">
+                Page {currentPage} sur {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+              >
+                Suivant
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -367,6 +480,94 @@ export default function LessonsPage() {
               onClick={() => setIsDatePickerOpen(false)}
             >
               Annuler
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSummaryModalOpen} onOpenChange={setIsSummaryModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Résumé des présences</DialogTitle>
+          </DialogHeader>
+          {isLoadingSummary ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+          ) : (
+            <div className="mt-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Étudiant</TableHead>
+                    {academicUE?.lessons
+                      .sort(
+                        (a, b) =>
+                          new Date(a.lesson_date).getTime() -
+                          new Date(b.lesson_date).getTime()
+                      )
+                      .map((lesson) => (
+                        <TableHead key={lesson.id} className="text-center">
+                          {format(parseISO(lesson.lesson_date), "dd/MM/yyyy")}
+                        </TableHead>
+                      ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {attendanceSummary.map((summary) => (
+                    <TableRow key={summary.student.id}>
+                      <TableCell>
+                        {summary.student.firstname} {summary.student.lastname}
+                      </TableCell>
+                      {academicUE?.lessons
+                        .sort(
+                          (a, b) =>
+                            new Date(a.lesson_date).getTime() -
+                            new Date(b.lesson_date).getTime()
+                        )
+                        .map((lesson) => {
+                          const attendance = summary.attendances.find(
+                            (a) => a.lesson_date === lesson.lesson_date
+                          );
+                          return (
+                            <TableCell key={lesson.id} className="text-center">
+                              <span
+                                className={cn(
+                                  "px-2 py-1 rounded-full text-xs font-medium",
+                                  {
+                                    "bg-green-50 text-green-700":
+                                      attendance?.status === "P",
+                                    "bg-blue-50 text-blue-700":
+                                      attendance?.status === "M",
+                                    "bg-yellow-50 text-yellow-700":
+                                      attendance?.status === "CM",
+                                    "bg-red-50 text-red-700":
+                                      attendance?.status === "A",
+                                    "bg-gray-50 text-gray-700":
+                                      attendance?.status === "D",
+                                    "bg-orange-50 text-orange-700":
+                                      attendance?.status === "ABANDON",
+                                    "bg-gray-100 text-gray-500": !attendance,
+                                  }
+                                )}
+                              >
+                                {attendance?.status || "-"}
+                              </span>
+                            </TableCell>
+                          );
+                        })}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsSummaryModalOpen(false)}
+            >
+              Fermer
             </Button>
           </DialogFooter>
         </DialogContent>

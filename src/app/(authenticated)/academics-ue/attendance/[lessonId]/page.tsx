@@ -1,8 +1,9 @@
 "use client";
 
 import { get, post } from "@/app/fetch";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -73,19 +74,19 @@ const getAvailableStatuses = (role: keyof typeof AccountRoleEnum) => {
     AccountRoleEnum[role] === AccountRoleEnum.ADMINISTRATOR
   ) {
     return {
-      [AttendanceStatusEnum.P]: "Présentiel",
-      [AttendanceStatusEnum.M]: "Distanciel",
-      [AttendanceStatusEnum.CM]: "Certificat médical",
-      [AttendanceStatusEnum.A]: "Absence non justifiée",
-      [AttendanceStatusEnum.ABANDON]: "Abandon",
-      [AttendanceStatusEnum.D]: "Dispensé",
+      [AttendanceStatusEnum.P]: "Présentiel (P)",
+      [AttendanceStatusEnum.M]: "Distanciel (M)",
+      [AttendanceStatusEnum.CM]: "Certificat médical (CM)",
+      [AttendanceStatusEnum.A]: "Absence non justifiée (A)",
+      [AttendanceStatusEnum.ABANDON]: "Abandon (ABANDON)",
+      [AttendanceStatusEnum.D]: "Dispensé (D)",
     };
   }
   if (AccountRoleEnum[role] === AccountRoleEnum.PROFESSOR) {
     return {
-      [AttendanceStatusEnum.P]: "Présentiel",
-      [AttendanceStatusEnum.M]: "Distanciel",
-      [AttendanceStatusEnum.A]: "Absence non justifiée",
+      [AttendanceStatusEnum.P]: "Présentiel (P)",
+      [AttendanceStatusEnum.M]: "Distanciel (M)",
+      [AttendanceStatusEnum.A]: "Absence non justifiée (A)",
     };
   }
   return {};
@@ -135,6 +136,7 @@ const ManageAttendancePage = () => {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const { lessonId } = useParams();
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   const fetchLessonData = async () => {
     try {
@@ -239,11 +241,16 @@ const ManageAttendancePage = () => {
     }
 
     try {
-      // Ici, vous pouvez ajouter la logique pour envoyer les données au serveur
       console.log("Présences soumises:", attendance);
       const response = await post(`/attendance/upsert/`, attendance);
       if (response.success) {
         toast.success("Présences enregistrées avec succès");
+        // Redirection vers la liste des leçons
+        if (attendanceData?.lesson.academic_ue.id) {
+          router.push(
+            `/academics-ue/lessons/${attendanceData.lesson.academic_ue.id}`
+          );
+        }
       } else {
         toast.error("Erreur lors de l'enregistrement des présences");
       }
@@ -267,9 +274,30 @@ const ManageAttendancePage = () => {
         <CardHeader className="bg-muted/50 border-b">
           <div className="flex flex-col space-y-4">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-2xl font-bold">
-                Gestion des présences
-              </CardTitle>
+              <div className="flex items-center space-x-4">
+                <Link
+                  href={`/academics-ue/lessons/${attendanceData?.lesson.academic_ue.id}`}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-6 w-6"
+                  >
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                </Link>
+                <CardTitle className="text-2xl font-bold">
+                  Gestion des présences
+                </CardTitle>
+              </div>
               {attendanceData && (
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium text-muted-foreground">

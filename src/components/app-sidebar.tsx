@@ -12,6 +12,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import Image from "next/image";
+import Link from "next/link";
 import heplLogo from "./../../public/images/HEPL_new_2.png";
 import {
   BookOpen,
@@ -27,6 +28,7 @@ import {
 import { AccountContext } from "@/app/context";
 import { useContext } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 // Types pour la structure des liens
 type SidebarSubItem = {
@@ -40,6 +42,7 @@ type SidebarItem = {
   url: string;
   icon: React.ReactNode;
   items?: SidebarSubItem[];
+  onClick?: () => void;
 };
 
 type SidebarLinksData = {
@@ -48,6 +51,31 @@ type SidebarLinksData = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter();
+  const { accountData, setAccountData } = useContext(AccountContext);
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    // Supprimer les données du localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+
+    // Réinitialiser le contexte
+    setAccountData({
+      token: "",
+      role: "",
+      account: undefined,
+    });
+
+    // Afficher un message de confirmation
+    toast({
+      title: "Déconnexion réussie",
+      description: "Vous avez été déconnecté avec succès",
+    });
+
+    // Rediriger vers la page de login
+    router.push("/login");
+  };
+
   const AdminLinks: SidebarLinksData = {
     navMain: [
       {
@@ -97,8 +125,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
       {
         title: "Déconnexion",
-        url: "/logout",
+        url: "#",
         icon: <LogOut className="size-4" />,
+        onClick: handleLogout,
       },
     ],
   };
@@ -106,29 +135,37 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const EducatorLinks: SidebarLinksData = {
     navMain: [
       {
-        title: "Tableau de bord",
-        url: "/",
-        icon: <BookOpen className="size-4" />,
+        title: "Gestion académique",
+        url: "#",
+        icon: <GraduationCap className="size-4" />,
+        items: [
+          {
+            title: "Unités d'enseignement",
+            url: "/ue",
+            icon: <BookOpen className="size-4" />,
+          },
+          {
+            title: "UE académiques",
+            url: "/academics-ue",
+            icon: <ClipboardList className="size-4" />,
+          },
+          {
+            title: "Sections",
+            url: "/section/list",
+            icon: <Building2 className="size-4" />,
+          },
+        ],
       },
       {
-        title: "Profil",
-        url: "/profile",
-        icon: <UserCircle className="size-4" />,
-      },
-      {
-        title: "Sections",
-        url: "/section/list",
-        icon: <Building2 className="size-4" />,
-      },
-      {
-        title: "UE académiques",
-        url: "/academics-ue",
-        icon: <ClipboardList className="size-4" />,
+        title: "Paramètres",
+        url: "/settings",
+        icon: <Settings className="size-4" />,
       },
       {
         title: "Déconnexion",
-        url: "/logout",
+        url: "#",
         icon: <LogOut className="size-4" />,
+        onClick: handleLogout,
       },
     ],
   };
@@ -141,14 +178,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: <BookOpen className="size-4" />,
       },
       {
-        title: "Profil",
-        url: "/profile",
-        icon: <UserCircle className="size-4" />,
+        title: "Paramètres",
+        url: "/settings",
+        icon: <Settings className="size-4" />,
       },
       {
         title: "Déconnexion",
-        url: "/logout",
+        url: "#",
         icon: <LogOut className="size-4" />,
+        onClick: handleLogout,
       },
     ],
   };
@@ -156,29 +194,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const ProfessorLinks: SidebarLinksData = {
     navMain: [
       {
-        title: "Tableau de bord",
-        url: "/",
-        icon: <BookOpen className="size-4" />,
-      },
-      {
-        title: "Profil",
-        url: "/profile",
-        icon: <UserCircle className="size-4" />,
-      },
-      {
         title: "Mes cours",
         url: "/academics-ue/",
         icon: <ClipboardList className="size-4" />,
       },
       {
+        title: "Paramètres",
+        url: "/settings",
+        icon: <Settings className="size-4" />,
+      },
+      {
         title: "Déconnexion",
-        url: "/logout",
+        url: "#",
         icon: <LogOut className="size-4" />,
+        onClick: handleLogout,
       },
     ],
   };
-
-  const { accountData } = useContext(AccountContext);
 
   const defineLinks = (): SidebarLinksData => {
     switch (accountData?.role) {
@@ -213,48 +245,52 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         {data.navMain.map((item, index) => (
           <React.Fragment key={item.title}>
-            <SidebarGroup>
-              {item.items ? (
-                <>
-                  <SidebarGroupLabel className="flex items-center gap-2">
-                    {item.icon}
-                    {item.title}
-                  </SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {item.items.map((subItem) => (
-                        <SidebarMenuItem
-                          key={subItem.title}
-                          className="list-none"
-                        >
+            {item.items ? (
+              <SidebarGroup>
+                <SidebarGroupLabel>
+                  {item.icon}
+                  <span>{item.title}</span>
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {item.items.map((subItem) => (
+                      <SidebarMenuItem key={subItem.title}>
+                        <Link href={subItem.url} passHref legacyBehavior>
                           <SidebarMenuButton asChild>
-                            <a
-                              href={subItem.url}
-                              className="flex items-center gap-2"
-                            >
+                            <a>
                               {subItem.icon}
-                              {subItem.title}
+                              <span>{subItem.title}</span>
                             </a>
                           </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </>
-              ) : (
-                <SidebarMenuItem className="list-none">
-                  <SidebarMenuButton
-                    asChild
-                    className="flex items-center gap-2"
-                  >
-                    <a href={item.url}>
-                      {item.icon}
-                      {item.title}
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-            </SidebarGroup>
+                        </Link>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ) : (
+              <SidebarGroup>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    {item.onClick ? (
+                      <SidebarMenuButton onClick={item.onClick}>
+                        {item.icon}
+                        <span>{item.title}</span>
+                      </SidebarMenuButton>
+                    ) : (
+                      <Link href={item.url} passHref legacyBehavior>
+                        <SidebarMenuButton asChild>
+                          <a>
+                            {item.icon}
+                            <span>{item.title}</span>
+                          </a>
+                        </SidebarMenuButton>
+                      </Link>
+                    )}
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroup>
+            )}
           </React.Fragment>
         ))}
       </SidebarContent>
