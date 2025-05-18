@@ -2,15 +2,13 @@
 import { get } from "@/app/fetch";
 import { Section } from "@/model/entity/ue/section.entity";
 import SectionDetailsContent from "./content";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { Suspense } from "react";
+import { useParams } from "next/navigation";
 
-export default function SectionDetailsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const resolvedParams = use(params);
+export default function SectionDetailsPage() {
+  const params = useParams();
+  const sectionId = params.id as string;
   const [section, setSection] = useState<Section | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +16,7 @@ export default function SectionDetailsPage({
   useEffect(() => {
     const fetchSection = async () => {
       try {
-        const response = await get<Section>(`/section/${resolvedParams.id}`);
+        const response = await get<Section>(`/section/${sectionId}`);
         if (response.success && response.data) {
           setSection(response.data);
         } else {
@@ -33,7 +31,7 @@ export default function SectionDetailsPage({
     };
 
     fetchSection();
-  }, [resolvedParams.id]);
+  }, [sectionId]);
 
   if (loading) {
     return (

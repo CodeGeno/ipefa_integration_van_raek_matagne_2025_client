@@ -4,6 +4,7 @@ import { createUrlWithParams } from "@/utils/url";
 import SectionOverview from "./overview";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import AddSectionButton from "./add-section-button";
 
 const SectionPage = async ({
 	searchParams,
@@ -33,14 +34,8 @@ const SectionPage = async ({
 						Gérez les sections et leurs unités d'enseignement
 					</p>
 				</div>
-				<Link href="/section/create">
-					<Button className="flex items-center gap-2">
-						<Plus className="h-4 w-4" />
-						Ajouter une section
-					</Button>
-				</Link>
+				<AddSectionButton />
 			</div>
-
 			<CardContent className="p-6 bg-white rounded-lg shadow-sm">
 				<SectionOverview
 					url={url}

@@ -8,9 +8,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { get, patch } from "@/app/fetch";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { AddResultModal } from "./AddResultModal";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { UE } from "@/types";
+import { AccountContext } from "@/app/context";
 
 interface Result {
 	id: number;
@@ -26,6 +28,8 @@ interface StudentResultsModalProps {
 	onClose: () => void;
 	academicUEId: number;
 	studentId: number;
+
+	ue: UE;
 }
 
 export function StudentResultsModal({
@@ -33,13 +37,14 @@ export function StudentResultsModal({
 	onClose,
 	academicUEId,
 	studentId,
+	ue,
 }: StudentResultsModalProps) {
 	const [results, setResults] = useState<Result[]>([]);
 	const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [editingResult, setEditingResult] = useState<Result | null>(null);
-
+	const { accountData } = useContext(AccountContext);
 	const fetchResults = async () => {
 		try {
 			setIsLoading(true);
@@ -47,9 +52,11 @@ export function StudentResultsModal({
 			const response = await get<Result[]>(
 				`/ue-management/results/${academicUEId}/${studentId}/`
 			);
+
 			if (response.success && response.data) {
 				setResults(response.data);
 			} else {
+				alert(response.message);
 				throw new Error("Erreur lors du chargement des résultats");
 			}
 		} catch (error) {
@@ -109,115 +116,120 @@ export function StudentResultsModal({
 
 				<div className="mt-4">
 					<div className="flex justify-between items-center mb-4">
-						<h3 className="text-lg font-medium">
-							Liste des résultats
-						</h3>
-						<Button onClick={() => setIsAddModalOpen(true)}>
-							Ajouter un résultat
-						</Button>
+						<h3 className="text-lg font-medium"></h3>
+						{accountData.role !== "PROFESSOR" && (
+							<Button onClick={() => setIsAddModalOpen(true)}>
+								Ajouter un résultat
+							</Button>
+						)}
 					</div>
 
-					<div className="border rounded-md overflow-hidden">
-						<table className="min-w-full">
-							<thead className="bg-gray-50">
-								<tr>
-									<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-										Résultat
-									</th>
-									<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-										Périodes
-									</th>
-									<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-										Statut
-									</th>
-									<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-										Dispensé
-									</th>
-									<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-										Approuvé
-									</th>
-									<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-										Actions
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								{results.map((result) => (
-									<tr
-										key={result.id}
-										className="border-t"
-									>
-										<td className="px-4 py-2">
-											{result.isExempt
-												? "Dispensé"
-												: result.result}
-										</td>
-										<td className="px-4 py-2">
-											{result.period}
-										</td>
-										<td className="px-4 py-2">
-											<span
-												className={
-													result.success
-														? "text-green-600"
-														: "text-red-600"
-												}
-											>
-												{result.success
-													? "Réussi"
-													: "Échoué"}
-											</span>
-										</td>
-										<td className="px-4 py-2">
-											{result.isExempt ? "Oui" : "Non"}
-										</td>
-										<td className="px-4 py-2">
-											{result.approved ? (
-												<CheckCircle2 className="h-5 w-5 text-green-500" />
-											) : (
-												<XCircle className="h-5 w-5 text-red-500" />
-											)}
-										</td>
-										<td className="px-4 py-2">
-											<div className="flex gap-2">
-												{!result.approved && (
+					{results.length === 0 ? (
+						<p className="text-slate-600">Aucun résultat trouvé</p>
+					) : (
+						<div className="border rounded-md overflow-hidden">
+							<table className="min-w-full">
+								<thead className="bg-gray-50">
+									<tr>
+										<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+											Résultat
+										</th>
+										<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+											Périodes
+										</th>
+										<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+											Statut
+										</th>
+										<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+											Dispensé
+										</th>
+										<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+											Approuvé
+										</th>
+										<th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+											Actions
+										</th>
+									</tr>
+								</thead>
+								<tbody>
+									{results.map((result) => (
+										<tr
+											key={result.id}
+											className="border-t"
+										>
+											<td className="px-4 py-2">
+												{result.isExempt
+													? "Dispensé"
+													: result.result}
+											</td>
+											<td className="px-4 py-2">
+												{result.period}
+											</td>
+											<td className="px-4 py-2">
+												<span
+													className={
+														result.success
+															? "text-green-600"
+															: "text-red-600"
+													}
+												>
+													{result.success
+														? "Réussi"
+														: "Échoué"}
+												</span>
+											</td>
+											<td className="px-4 py-2">
+												{result.isExempt
+													? "Oui"
+													: "Non"}
+											</td>
+											<td className="px-4 py-2">
+												{result.approved ? (
+													<CheckCircle2 className="h-5 w-5 text-green-500" />
+												) : (
+													<XCircle className="h-5 w-5 text-red-500" />
+												)}
+											</td>
+											<td className="px-4 py-2">
+												<div className="flex gap-2">
+													{!result.approved && (
+														<Button
+															variant="outline"
+															size="sm"
+															onClick={() =>
+																setEditingResult(
+																	result
+																)
+															}
+														>
+															Modifier
+														</Button>
+													)}
 													<Button
-														variant="outline"
+														variant="default"
 														size="sm"
+														disabled={
+															result.approved
+														}
 														onClick={() =>
-															setEditingResult(
-																result
+															handleApproveResult(
+																result.id,
+																result.approved
 															)
 														}
 													>
-														Modifier
+														{!result.approved
+															? "Approuver"
+															: "Approuvé"}
 													</Button>
-												)}
-												<Button
-													variant={
-														result.approved
-															? "destructive"
-															: "default"
-													}
-													size="sm"
-													onClick={() =>
-														handleApproveResult(
-															result.id,
-															result.approved
-														)
-													}
-												>
-													{result.approved
-														? "Désapprouver"
-														: "Approuver"}
-												</Button>
-											</div>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
+												</div>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					)}
 				</div>
 
 				<AddResultModal
@@ -228,13 +240,14 @@ export function StudentResultsModal({
 					}}
 					academicUEId={academicUEId.toString()}
 					studentId={studentId.toString()}
-					maxPeriod={results[0]?.period || 0}
+					maxPeriod={ue.periods}
 					onSuccess={() => {
 						fetchResults();
 						setIsAddModalOpen(false);
 						setEditingResult(null);
 					}}
 					editingResult={editingResult}
+					ue={ue}
 				/>
 			</DialogContent>
 		</Dialog>
