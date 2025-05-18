@@ -7,13 +7,16 @@ import {
 	ApiPaginatedResponse,
 } from "@/model/api/api.response";
 import { BASE_URL } from "@/lib/url";
+import { redirect } from "next/navigation";
 // src/app/fetch.ts
 const myFetch = async <T,>(
 	url: string,
 	options?: RequestInit
 ): Promise<ApiResponse<T>> => {
 	const token = localStorage.getItem("token");
-	const role = localStorage.getItem("role");
+
+	if (token == "") redirect("/login");
+
 	try {
 		const response = await fetch(BASE_URL + url, {
 			...options,
