@@ -37,11 +37,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+interface UEResult {
+  id: number;
+  result: number;
+  period: number;
+  success: boolean;
+  isExempt: boolean;
+  approved: boolean;
+}
+
 const StudentDetailsPage = () => {
   const { id } = useParams();
   const router = useRouter();
   const [student, setStudent] = useState<Student>();
   const [academicUEs, setAcademicUEs] = useState<AcademicUE[]>([]);
+  const [ueResults, setUeResults] = useState<Record<string, UEResult[]>>({});
   const [displayMode, setDisplayMode] = useState<"none" | "section" | "ue">(
     "none"
   );
@@ -58,6 +68,19 @@ const StudentDetailsPage = () => {
         );
         if (ueResponse.success && ueResponse.data) {
           setAcademicUEs(ueResponse.data);
+          // Récupérer les résultats pour chaque UE
+          const resultsPromises = ueResponse.data.map(async (ue) => {
+            const resultResponse = await get<{
+              success: boolean;
+              data: UEResult[];
+            }>(`/ue-management/results/${ue.id}/${id}/`);
+            if (resultResponse.success && resultResponse.data) {
+              return [ue.id, resultResponse.data];
+            }
+            return [ue.id, []];
+          });
+          const results = await Promise.all(resultsPromises);
+          setUeResults(Object.fromEntries(results));
         }
       }
     } catch (error) {
@@ -245,27 +268,77 @@ const StudentDetailsPage = () => {
                       <TableHead>Année</TableHead>
                       <TableHead>Professeur</TableHead>
                       <TableHead>Période</TableHead>
+                      <TableHead>Résultat</TableHead>
                       <TableHead>Statut</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {academicUEs.map((ue) => (
-                      <TableRow key={ue.id}>
-                        <TableCell className="font-medium">
-                          {ue.ue.name}
-                        </TableCell>
-                        <TableCell>{ue.year}</TableCell>
-                        <TableCell>
-                          {ue.professor
-                            ? `${ue.professor.contactDetails.firstName} ${ue.professor.contactDetails.lastName}`
-                            : "Non assigné"}
-                        </TableCell>
-                        <TableCell>{ue.ue.periods}</TableCell>
-                        <TableCell>
-                          <span className="text-yellow-600">En cours</span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {academicUEs.map((ue) => {
+                      const results = ueResults[ue.id] || [];
+                      const latestResult =
+                        results.length > 0 ? results[results.length - 1] : null;
+
+                      // Déterminer le statut
+                      const getStatus = () => {
+                        if (latestResult?.isExempt) return "Dispensé";
+                        if (latestResult?.success) return "Réussi";
+                        if (latestResult?.result !== undefined) return "Échoué";
+
+                        const currentDate = new Date();
+                        const startDate = new Date(ue.startDate);
+                        const endDate = new Date(ue.endDate);
+
+                        if (currentDate < startDate) return "À venir";
+                        if (currentDate > endDate) return "Terminé";
+                        return "En cours";
+                      };
+
+                      // Formater le résultat
+                      const formatResult = () => {
+                        if (!latestResult) return "Non disponible";
+                        if (latestResult.isExempt) return "Dispensé";
+                        const totalPoints = ue.ue.periods * 10;
+                        return `${latestResult.result}/${totalPoints}`;
+                      };
+
+                      // Vérifier si l'étudiant est dans la liste des étudiants de l'UE
+                      const isStudentEnrolled = ue.students?.some(
+                        (student) => student.id === id
+                      );
+
+                      return (
+                        <TableRow key={ue.id}>
+                          <TableCell className="font-medium">
+                            {ue.ue.name}
+                          </TableCell>
+                          <TableCell>{ue.cycleYear}</TableCell>
+                          <TableCell>
+                            {ue.professor
+                              ? `${ue.professor.contactDetails.firstName} ${ue.professor.contactDetails.lastName}`
+                              : "Non assigné"}
+                          </TableCell>
+                          <TableCell>{ue.ue.periods}</TableCell>
+                          <TableCell>{formatResult()}</TableCell>
+                          <TableCell>
+                            <span
+                              className={`${
+                                getStatus() === "Réussi"
+                                  ? "text-green-600"
+                                  : getStatus() === "Échoué"
+                                  ? "text-red-600"
+                                  : getStatus() === "Dispensé"
+                                  ? "text-blue-600"
+                                  : getStatus() === "À venir"
+                                  ? "text-blue-600"
+                                  : "text-yellow-600"
+                              }`}
+                            >
+                              {getStatus()}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               ) : (
@@ -277,81 +350,8 @@ const StudentDetailsPage = () => {
               )}
             </CardContent>
           </Card>
-
-          <Card className="border-none shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/10 p-3 rounded-full">
-                  <GraduationCap className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-2xl">Inscriptions</CardTitle>
-                  <CardDescription>
-                    Gérez les inscriptions de l'étudiant
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  className="w-full sm:w-auto"
-                  onClick={() =>
-                    setDisplayMode(
-                      displayMode === "section" ? "none" : "section"
-                    )
-                  }
-                  variant="default"
-                >
-                  <GraduationCap className="h-4 w-4 mr-2" />
-                  Inscrire à une section
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="w-full sm:w-auto"
-                  onClick={() =>
-                    setDisplayMode(displayMode === "ue" ? "none" : "ue")
-                  }
-                >
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Inscrire à une UE
-                </Button>
-              </div>
-
-              {displayMode === "section" && (
-                <div className="mt-6">
-                  <DisplaySectionRegistration key="section" />
-                </div>
-              )}
-              {displayMode === "ue" && (
-                <div className="mt-6">
-                  <DisplayUERegistration key="ue" />
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
-    </div>
-  );
-};
-
-const DisplayUERegistration = () => {
-  return (
-    <div className="mt-6">
-      <h2 className="text-xl font-semibold mb-4">Inscription à une UE</h2>
-      <Card>
-        <CardContent className="flex justify-center items-center p-8">
-          <div className="text-center">
-            <p className="text-muted-foreground mb-2">
-              Cette fonctionnalité n'est pas encore disponible.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Vous pourrez bientôt inscrire cet étudiant à des UE spécifiques.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

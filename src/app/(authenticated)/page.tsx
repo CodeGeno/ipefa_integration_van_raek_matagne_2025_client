@@ -180,10 +180,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const userRole = getRoleFromContext(user.role);
-    if (
-      userRole === AccountRoleEnum.PROFESSOR ||
-      userRole === AccountRoleEnum.EDUCATOR
-    ) {
+    if (userRole !== AccountRoleEnum.STUDENT) {
       router.push("/academics-ue");
       return;
     }
@@ -223,6 +220,8 @@ export default function DashboardPage() {
               status: response.status,
               statusText: response.statusText,
               responseText,
+              url,
+              headers: Object.fromEntries(response.headers.entries()),
             });
             return;
           }
@@ -230,8 +229,14 @@ export default function DashboardPage() {
           let data;
           try {
             data = JSON.parse(responseText);
+            console.log("Données parsées:", data);
           } catch (e) {
-            console.error("Erreur lors du parsing de la réponse:", e);
+            console.error(
+              "Erreur lors du parsing de la réponse:",
+              e,
+              "Texte brut:",
+              responseText
+            );
             return;
           }
 
@@ -242,11 +247,12 @@ export default function DashboardPage() {
 
           if (data.success) {
             setAcademicUEs(data.data || []);
+          } else if (data.message) {
+            console.error("Erreur dans la réponse:", data.message);
+          } else if (Array.isArray(data)) {
+            setAcademicUEs(data);
           } else {
-            console.error(
-              "Erreur dans la réponse:",
-              data.message || "Message d'erreur non spécifié"
-            );
+            console.error("Format de réponse inattendu:", data);
           }
         }
       } catch (error) {

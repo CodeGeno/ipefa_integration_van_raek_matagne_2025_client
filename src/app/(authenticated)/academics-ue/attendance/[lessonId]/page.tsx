@@ -2,27 +2,26 @@
 
 import { get, post } from "@/app/fetch";
 import { useParams, useRouter } from "next/navigation";
-import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Student } from "@/model/entity/users/student.entity";
 import { AttendanceStatusEnum } from "@/model/enum/attendance-status.enum";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Lesson, LessonStatus } from "@/model/entity/lessons/lesson.entity";
@@ -33,40 +32,39 @@ import { AccountContext } from "@/app/context";
 import { useContext } from "react";
 import { AccountRoleEnum } from "@/model/enum/account-role.enum";
 import { cn } from "@/lib/utils";
-import { Metadata } from "next";
 
 interface AttendanceData {
-	students: Student[];
-	professor: Employee;
-	lesson: Lesson;
-	ue: UE;
-	academic_ue: AcademicUE;
-	attendances: {
-		id: number;
-		status: keyof typeof AttendanceStatusEnum;
-		lesson: number;
-		student: number;
-	}[];
+  students: Student[];
+  professor: Employee;
+  lesson: Lesson;
+  ue: UE;
+  academic_ue: AcademicUE;
+  attendances: {
+    id: number;
+    status: keyof typeof AttendanceStatusEnum;
+    lesson: number;
+    student: number;
+  }[];
 }
 
 interface Attendance {
-	id?: number;
-	status: keyof typeof AttendanceStatusEnum | "";
-	lesson_id: number;
-	student_id: number;
+  id?: number;
+  status: keyof typeof AttendanceStatusEnum | "";
+  lesson_id: number;
+  student_id: number;
 }
 
 const attendanceStatusMap = Object.fromEntries(
-	Object.entries(AttendanceStatusEnum).map(([key, value]) => [value, key])
+  Object.entries(AttendanceStatusEnum).map(([key, value]) => [value, key])
 );
 
 const getStatusKey = (
-	value: string
+  value: string
 ): keyof typeof AttendanceStatusEnum | "" => {
-	const entry = Object.entries(AttendanceStatusEnum).find(
-		([_, v]) => v === value
-	);
-	return entry ? (entry[0] as keyof typeof AttendanceStatusEnum) : "";
+  const entry = Object.entries(AttendanceStatusEnum).find(
+    ([_, v]) => v === value
+  );
+  return entry ? (entry[0] as keyof typeof AttendanceStatusEnum) : "";
 };
 
 const getAvailableStatuses = (role: keyof typeof AccountRoleEnum) => {
@@ -94,41 +92,41 @@ const getAvailableStatuses = (role: keyof typeof AccountRoleEnum) => {
 };
 
 const getStatusColorClass = (
-	status: keyof typeof AttendanceStatusEnum
+  status: keyof typeof AttendanceStatusEnum
 ): string => {
-	switch (status) {
-		case "P":
-			return "bg-green-100 text-green-800";
-		case "M":
-			return "bg-blue-100 text-blue-800";
-		case "CM":
-			return "bg-yellow-100 text-yellow-800";
-		case "A":
-			return "bg-red-100 text-red-800";
-		case "ABANDON":
-			return "bg-red-500 text-white";
-		case "D":
-			return "bg-purple-100 text-purple-800";
-		default:
-			return "bg-gray-100 text-gray-800";
-	}
+  switch (status) {
+    case "P":
+      return "bg-green-100 text-green-800";
+    case "M":
+      return "bg-blue-100 text-blue-800";
+    case "CM":
+      return "bg-yellow-100 text-yellow-800";
+    case "A":
+      return "bg-red-100 text-red-800";
+    case "ABANDON":
+      return "bg-red-500 text-white";
+    case "D":
+      return "bg-purple-100 text-purple-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
 };
 
 const getLessonStatusColorClass = (
-	status: keyof typeof LessonStatus
+  status: keyof typeof LessonStatus
 ): string => {
-	switch (status) {
-		case "PROGRAMMED":
-			return "bg-blue-100 text-blue-800";
-		case "IN_PROGRESS":
-			return "bg-yellow-100 text-yellow-800";
-		case "COMPLETED":
-			return "bg-green-100 text-green-800";
-		case "CANCELLED":
-			return "bg-red-100 text-red-800";
-		default:
-			return "bg-gray-100 text-gray-800";
-	}
+  switch (status) {
+    case "PROGRAMMED":
+      return "bg-blue-100 text-blue-800";
+    case "IN_PROGRESS":
+      return "bg-yellow-100 text-yellow-800";
+    case "COMPLETED":
+      return "bg-green-100 text-green-800";
+    case "CANCELLED":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
 };
 
 const ManageAttendancePage = () => {
@@ -139,112 +137,107 @@ const ManageAttendancePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-	const fetchLessonData = async () => {
-		try {
-			const response = await get<AttendanceData>(
-				`/attendance/details/${lessonId}/`
-			);
-			console.log("Response data:", response.data);
-			console.log("Lesson status:", response.data?.lesson?.status);
+  const fetchLessonData = async () => {
+    try {
+      const response = await get<AttendanceData>(
+        `/attendance/details/${lessonId}/`
+      );
+      console.log("Response data:", response.data);
+      console.log("Lesson status:", response.data?.lesson?.status);
 
-			if (response.success && response.data) {
-				setAttendanceData(response.data);
-				// Initialiser les présences avec les données existantes ou des valeurs vides
-				const initialAttendance: Attendance[] =
-					response.data.students.map((student) => {
-						const existingAttendance =
-							response.data?.attendances?.find(
-								(att) => att.student === Number(student.id)
-							);
-						console.log(
-							"Student:",
-							student.id,
-							"Existing attendance:",
-							existingAttendance
-						);
+      if (response.success && response.data) {
+        setAttendanceData(response.data);
+        // Initialiser les présences avec les données existantes ou des valeurs vides
+        const initialAttendance: Attendance[] = response.data.students.map(
+          (student) => {
+            const existingAttendance = response.data?.attendances?.find(
+              (att) => att.student === Number(student.id)
+            );
+            console.log(
+              "Student:",
+              student.id,
+              "Existing attendance:",
+              existingAttendance
+            );
 
-						const attendance: Attendance = existingAttendance
-							? {
-									id: existingAttendance.id,
-									status: existingAttendance.status as keyof typeof AttendanceStatusEnum,
-									lesson_id: existingAttendance.lesson,
-									student_id: existingAttendance.student,
-							  }
-							: {
-									status: "",
-									lesson_id: Number(lessonId),
-									student_id: Number(student.id),
-							  };
-						console.log(
-							"Final attendance for student:",
-							student.id,
-							attendance
-						);
-						return attendance;
-					});
-				console.log("Initial attendance array:", initialAttendance);
-				setAttendance(initialAttendance);
-				setIsLoading(false);
-			} else {
-				toast.error("Erreur lors du chargement des données");
-			}
-		} catch (error) {
-			console.error("Erreur lors du chargement des données:", error);
-			toast.error("Erreur lors du chargement des données");
-		}
-	};
+            const attendance: Attendance = existingAttendance
+              ? {
+                  id: existingAttendance.id,
+                  status:
+                    existingAttendance.status as keyof typeof AttendanceStatusEnum,
+                  lesson_id: existingAttendance.lesson,
+                  student_id: existingAttendance.student,
+                }
+              : {
+                  status: "",
+                  lesson_id: Number(lessonId),
+                  student_id: Number(student.id),
+                };
+            console.log(
+              "Final attendance for student:",
+              student.id,
+              attendance
+            );
+            return attendance;
+          }
+        );
+        console.log("Initial attendance array:", initialAttendance);
+        setAttendance(initialAttendance);
+        setIsLoading(false);
+      } else {
+        toast.error("Erreur lors du chargement des données");
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des données:", error);
+      toast.error("Erreur lors du chargement des données");
+    }
+  };
 
-	useEffect(() => {
-		if (lessonId) {
-			fetchLessonData();
-		}
-	}, [lessonId]);
+  useEffect(() => {
+    if (lessonId) {
+      fetchLessonData();
+    }
+  }, [lessonId]);
 
-	const handleAttendanceChange = (studentId: number, status: string) => {
-		console.log("Changing attendance:", { studentId, status });
-		const statusKey = Object.entries(AttendanceStatusEnum).find(
-			([_, value]) => value === status
-		)?.[0] as keyof typeof AttendanceStatusEnum;
-		setAttendance((prev) => {
-			const newAttendance = prev.map((att) =>
-				att.student_id === studentId
-					? { ...att, status: statusKey }
-					: att
-			);
-			console.log("New attendance state:", newAttendance);
-			return newAttendance;
-		});
-	};
+  const handleAttendanceChange = (studentId: number, status: string) => {
+    console.log("Changing attendance:", { studentId, status });
+    const statusKey = Object.entries(AttendanceStatusEnum).find(
+      ([_, value]) => value === status
+    )?.[0] as keyof typeof AttendanceStatusEnum;
+    setAttendance((prev) => {
+      const newAttendance = prev.map((att) =>
+        att.student_id === studentId ? { ...att, status: statusKey } : att
+      );
+      console.log("New attendance state:", newAttendance);
+      return newAttendance;
+    });
+  };
 
-	const isFormValid = () => {
-		if (!attendanceData?.students.length) return false;
+  const isFormValid = () => {
+    if (!attendanceData?.students.length) return false;
 
-		const isValid = attendance.every((att) => {
-			console.log("Checking attendance:", {
-				studentId: att.student_id,
-				status: att.status,
-				isEmpty: att.status === "",
-				isValidKey: Object.keys(AttendanceStatusEnum).includes(
-					att.status
-				),
-			});
-			return (
-				att.status !== "" &&
-				Object.keys(AttendanceStatusEnum).includes(att.status)
-			);
-		});
+    const isValid = attendance.every((att) => {
+      console.log("Checking attendance:", {
+        studentId: att.student_id,
+        status: att.status,
+        isEmpty: att.status === "",
+        isValidKey: Object.keys(AttendanceStatusEnum).includes(att.status),
+      });
+      return (
+        att.status !== "" &&
+        Object.keys(AttendanceStatusEnum).includes(att.status)
+      );
+    });
 
-		console.log("Form validation result:", isValid);
-		return isValid;
-	};
+    console.log("Form validation result:", isValid);
+    return isValid;
+  };
 
-	const handleSubmit = async () => {
-		if (!isFormValid()) {
-			toast.error(
-				"Veuillez remplir toutes les présences avant de valider"
-			);
-			return;
-		}
+  const handleSubmit = async () => {
+    if (!isFormValid()) {
+      toast.error("Veuillez remplir toutes les présences avant de valider");
+      return;
+    }
 
     try {
       console.log("Présences soumises:", attendance);
@@ -266,13 +259,13 @@ const ManageAttendancePage = () => {
     }
   };
 
-	if (isLoading) {
-		return (
-			<div className="flex items-center justify-center min-h-screen">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-			</div>
-		);
-	}
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8 px-4">
