@@ -12,9 +12,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Settings } from "lucide-react";
-import Link from "next/link";
-import { BASE_URL } from "@/lib/url";
+import { Settings } from "lucide-react";
+import { post } from "@/app/fetch";
 
 export default function SettingsPage() {
   const [oldPassword, setOldPassword] = useState("");
@@ -47,21 +46,21 @@ export default function SettingsPage() {
     }
 
     try {
-      const response = await fetch(`${BASE_URL}/security/change-password/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          old_password: oldPassword,
-          new_password: newPassword,
-        }),
+      const response = await post("/security/change-password/", {
+        old_password: oldPassword,
+        new_password: newPassword,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Une erreur est survenue");
+      if (!response.success) {
+        if (response.message === "Token manquant") {
+          toast({
+            title: "Erreur",
+            description: "Session expirée. Veuillez vous reconnecter.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw new Error(response.message || "Une erreur est survenue");
       }
 
       toast({
