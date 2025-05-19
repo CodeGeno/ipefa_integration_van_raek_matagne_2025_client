@@ -34,6 +34,8 @@ import {
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { get } from "@/app/fetch";
+import { AttendanceStatusEnum } from "@/model/enum/attendance-status.enum";
+import { Attendance } from "@/model/entity/lessons/attendance.entity";
 interface ContactDetails {
 	id: number;
 	firstName: string;
@@ -86,9 +88,13 @@ interface Lesson {
 }
 interface Result {
 	id: number;
-	score: number;
-	status: string;
-	date: string;
+	academicsUE: number;
+	approved: boolean;
+	isExempt: boolean;
+	period: number;
+	result: number;
+	student: number;
+	success: boolean;
 }
 interface AcademicUE {
 	id: number;
@@ -99,7 +105,8 @@ interface AcademicUE {
 	students: Student[];
 	professor: Professor;
 	lessons: Lesson[];
-	results: Result[];
+	results: Result;
+	attendances: Attendance[];
 }
 
 const getRoleFromContext = (role: string): AccountRoleEnum => {
@@ -202,7 +209,7 @@ export default function DashboardPage() {
 
 				if (userRole === AccountRoleEnum.STUDENT) {
 					const response = await get<AcademicUE[]>(
-						`/ue-management/academic-ues/student/${accountId}/`
+						`/ue-management/academic-ues/student/details/${accountId}/`
 					);
 
 					if (!response.success) {
@@ -311,302 +318,421 @@ export default function DashboardPage() {
 								Année {year}
 							</h2>
 							<div className="space-y-4">
-								{ues.map((academicUE) => (
-									<Card key={academicUE.id}>
-										<CardHeader>
-											<div className="flex justify-between items-center">
-												<CardTitle className="text-lg">
-													{academicUE.ue.name}
-												</CardTitle>
-												<div className="flex gap-2">
-													<Dialog>
-														<DialogTrigger asChild>
-															<Button
-																variant="outline"
-																size="sm"
+								{ues.map((academicUE) => {
+									console.log(academicUE);
+									return (
+										<Card key={academicUE.id}>
+											<CardHeader>
+												<div className="flex justify-between items-center">
+													<CardTitle className="text-lg">
+														{academicUE.ue.name}
+													</CardTitle>
+													<div className="flex gap-2">
+														<Dialog>
+															<DialogTrigger
+																asChild
 															>
-																<Book className="w-4 h-4 mr-2" />
-																Leçons
-															</Button>
-														</DialogTrigger>
-														<DialogContent className="max-w-4xl">
-															<DialogHeader>
-																<DialogTitle>
-																	Leçons -{" "}
-																	{
-																		academicUE
-																			.ue
-																			.name
-																	}
-																</DialogTitle>
-															</DialogHeader>
-															<ScrollArea className="h-[400px]">
-																<Table>
-																	<TableHeader>
-																		<TableRow>
-																			<TableHead>
-																				Date
-																			</TableHead>
-																			<TableHead>
-																				Statut
-																			</TableHead>
-																		</TableRow>
-																	</TableHeader>
-																	<TableBody>
-																		{academicUE.lessons
-																			.sort(
-																				(
-																					a,
-																					b
-																				) =>
-																					new Date(
-																						a.lesson_date
-																					).getTime() -
-																					new Date(
-																						b.lesson_date
-																					).getTime()
-																			)
-																			.map(
-																				(
-																					lesson
-																				) => (
-																					<TableRow
-																						key={
-																							lesson.id
-																						}
-																					>
-																						<TableCell>
-																							{new Date(
-																								lesson.lesson_date
-																							).toLocaleDateString()}
-																						</TableCell>
-																						<TableCell>
-																							<Badge
-																								className={`${getStatusColor(
-																									lesson.status
-																								)} text-white`}
-																							>
-																								{getStatusText(
-																									lesson.status
-																								)}
-																							</Badge>
-																						</TableCell>
-																					</TableRow>
-																				)
-																			)}
-																	</TableBody>
-																</Table>
-															</ScrollArea>
-														</DialogContent>
-													</Dialog>
-
-													<Dialog>
-														<DialogTrigger asChild>
-															<Button
-																variant="outline"
-																size="sm"
-															>
-																<Users className="w-4 h-4 mr-2" />
-																Présences
-															</Button>
-														</DialogTrigger>
-														<DialogContent className="max-w-4xl">
-															<DialogHeader>
-																<DialogTitle>
-																	Présences -{" "}
-																	{
-																		academicUE
-																			.ue
-																			.name
-																	}
-																</DialogTitle>
-															</DialogHeader>
-															<ScrollArea className="h-[400px]">
-																<Table>
-																	<TableHeader>
-																		<TableRow>
-																			<TableHead>
-																				Date
-																			</TableHead>
-																			<TableHead>
-																				Statut
-																			</TableHead>
-																		</TableRow>
-																	</TableHeader>
-																	<TableBody>
-																		{academicUE.lessons
-																			.filter(
-																				(
-																					lesson
-																				) =>
-																					lesson.status ===
-																					"COMPLETED"
-																			)
-																			.sort(
-																				(
-																					a,
-																					b
-																				) =>
-																					new Date(
-																						a.lesson_date
-																					).getTime() -
-																					new Date(
-																						b.lesson_date
-																					).getTime()
-																			)
-																			.map(
-																				(
-																					lesson
-																				) => (
-																					<TableRow
-																						key={
-																							lesson.id
-																						}
-																					>
-																						<TableCell>
-																							{new Date(
-																								lesson.lesson_date
-																							).toLocaleDateString()}
-																						</TableCell>
-																						<TableCell>
-																							<Badge className="bg-green-500 text-white">
-																								Présent
-																							</Badge>
-																						</TableCell>
-																					</TableRow>
-																				)
-																			)}
-																	</TableBody>
-																</Table>
-															</ScrollArea>
-														</DialogContent>
-													</Dialog>
-
-													<Dialog>
-														<DialogTrigger asChild>
-															<Button
-																variant="outline"
-																size="sm"
-															>
-																<CheckSquare className="w-4 h-4 mr-2" />
-																Résultats
-															</Button>
-														</DialogTrigger>
-														<DialogContent className="max-w-4xl">
-															<DialogHeader>
-																<DialogTitle>
-																	Résultats -{" "}
-																	{
-																		academicUE
-																			.ue
-																			.name
-																	}
-																</DialogTitle>
-															</DialogHeader>
-															<ScrollArea className="h-[400px]">
-																<div className="space-y-4">
-																	{academicUE
-																		.results
-																		.length >
-																	0 ? (
-																		<Table>
-																			<TableHeader>
-																				<TableRow>
-																					<TableHead>
-																						Date
-																					</TableHead>
-																					<TableHead>
-																						Score
-																					</TableHead>
-																					<TableHead>
-																						Statut
-																					</TableHead>
-																				</TableRow>
-																			</TableHeader>
-																			<TableBody>
-																				{academicUE.results.map(
+																<Button
+																	variant="outline"
+																	size="sm"
+																>
+																	<Book className="w-4 h-4 mr-2" />
+																	Leçons
+																</Button>
+															</DialogTrigger>
+															<DialogContent className="max-w-4xl">
+																<DialogHeader>
+																	<DialogTitle>
+																		Leçons -{" "}
+																		{
+																			academicUE
+																				.ue
+																				.name
+																		}
+																	</DialogTitle>
+																</DialogHeader>
+																<ScrollArea className="h-[400px]">
+																	<Table>
+																		<TableHeader>
+																			<TableRow>
+																				<TableHead>
+																					Date
+																				</TableHead>
+																				<TableHead>
+																					Statut
+																				</TableHead>
+																			</TableRow>
+																		</TableHeader>
+																		<TableBody>
+																			{academicUE.lessons
+																				.sort(
 																					(
-																						result,
-																						index
+																						a,
+																						b
+																					) =>
+																						new Date(
+																							a.lesson_date
+																						).getTime() -
+																						new Date(
+																							b.lesson_date
+																						).getTime()
+																				)
+																				.map(
+																					(
+																						lesson
 																					) => (
 																						<TableRow
 																							key={
-																								index
+																								lesson.id
 																							}
 																						>
 																							<TableCell>
 																								{new Date(
-																									result.date
+																									lesson.lesson_date
 																								).toLocaleDateString()}
 																							</TableCell>
 																							<TableCell>
-																								{
-																									result.score
-																								}
-																								/20
-																							</TableCell>
-																							<TableCell>
-																								<Badge className="bg-blue-500 text-white">
-																									{
-																										result.status
-																									}
+																								<Badge
+																									className={`${getStatusColor(
+																										lesson.status
+																									)} text-white`}
+																								>
+																									{getStatusText(
+																										lesson.status
+																									)}
 																								</Badge>
 																							</TableCell>
 																						</TableRow>
 																					)
 																				)}
-																			</TableBody>
-																		</Table>
-																	) : (
-																		<p className="text-center text-muted-foreground">
-																			Aucun
-																			résultat
-																			disponible
-																			pour
-																			le
-																			moment
-																		</p>
-																	)}
-																</div>
-															</ScrollArea>
-														</DialogContent>
-													</Dialog>
+																		</TableBody>
+																	</Table>
+																</ScrollArea>
+															</DialogContent>
+														</Dialog>
+
+														<Dialog>
+															<DialogTrigger
+																asChild
+															>
+																<Button
+																	variant="outline"
+																	size="sm"
+																>
+																	<Users className="w-4 h-4 mr-2" />
+																	Présences
+																</Button>
+															</DialogTrigger>
+															<DialogContent className="max-w-4xl">
+																<DialogHeader>
+																	<DialogTitle>
+																		Présences
+																		-{" "}
+																		{
+																			academicUE
+																				.ue
+																				.name
+																		}
+																	</DialogTitle>
+																</DialogHeader>
+																<ScrollArea className="h-[400px]">
+																	<Table>
+																		<TableHeader>
+																			<TableRow>
+																				<TableHead>
+																					Date
+																				</TableHead>
+																				<TableHead>
+																					Statut
+																					de
+																					la
+																					leçon
+																				</TableHead>
+																				<TableHead>
+																					Présence
+																				</TableHead>
+																			</TableRow>
+																		</TableHeader>
+																		<TableBody>
+																			{academicUE.lessons
+																				.sort(
+																					(
+																						a,
+																						b
+																					) =>
+																						new Date(
+																							a.lesson_date
+																						).getTime() -
+																						new Date(
+																							b.lesson_date
+																						).getTime()
+																				)
+																				.map(
+																					(
+																						lesson
+																					) => {
+																						const attendance =
+																							academicUE.attendances.find(
+																								(
+																									attendance
+																								) =>
+																									attendance.lesson_id ===
+																									lesson.id
+																							);
+																						// On prépare le badge selon le statut de présence
+																						let badgeColor =
+																							"bg-gray-400";
+																						let badgeText =
+																							"Non défini";
+																						if (
+																							attendance
+																						) {
+																							switch (
+																								attendance.status
+																							) {
+																								case "P":
+																									badgeColor =
+																										"bg-green-500";
+																									badgeText =
+																										"Présent";
+																									break;
+																								case "M":
+																									badgeColor =
+																										"bg-yellow-500";
+																									badgeText =
+																										"Malade";
+																									break;
+																								case "Abandon":
+																									badgeColor =
+																										"bg-red-500";
+																									badgeText =
+																										"Abandon";
+																									break;
+																								default:
+																									badgeColor =
+																										"bg-gray-400";
+																									badgeText =
+																										attendance.status;
+																							}
+																						}
+																						return (
+																							<TableRow
+																								key={
+																									lesson.id
+																								}
+																							>
+																								<TableCell>
+																									{new Date(
+																										lesson.lesson_date
+																									).toLocaleDateString()}
+																								</TableCell>
+																								<TableCell>
+																									<Badge
+																										className={`${getStatusColor(
+																											lesson.status
+																										)} text-white`}
+																									>
+																										{getStatusText(
+																											lesson.status
+																										)}
+																									</Badge>
+																								</TableCell>
+																								<TableCell>
+																									<Badge
+																										className={`${badgeColor} text-white`}
+																									>
+																										{
+																											badgeText
+																										}
+																									</Badge>
+																								</TableCell>
+																							</TableRow>
+																						);
+																					}
+																				)}
+																		</TableBody>
+																	</Table>
+																</ScrollArea>
+															</DialogContent>
+														</Dialog>
+
+														<Dialog>
+															<DialogTrigger
+																asChild
+															>
+																<Button
+																	variant="outline"
+																	size="sm"
+																>
+																	<CheckSquare className="w-4 h-4 mr-2" />
+																	Résultats
+																</Button>
+															</DialogTrigger>
+															<DialogContent className="max-w-4xl">
+																<DialogHeader>
+																	<DialogTitle>
+																		Résultats
+																		-{" "}
+																		{
+																			academicUE
+																				.ue
+																				.name
+																		}
+																	</DialogTitle>
+																</DialogHeader>
+																<ScrollArea className="h-[400px]">
+																	<Table>
+																		<TableHeader>
+																			<TableRow>
+																				<TableHead>
+																					Résultat
+																				</TableHead>
+																				<TableHead>
+																					Approuvé
+																				</TableHead>
+																				<TableHead>
+																					Exempté
+																				</TableHead>
+																				<TableHead>
+																					Périodes
+																				</TableHead>
+																				<TableHead>
+																					Succès
+																				</TableHead>
+																			</TableRow>
+																		</TableHeader>
+																		<TableBody>
+																			{academicUE.results ? (
+																				<TableRow
+																					key={
+																						academicUE
+																							.results
+																							.id
+																					}
+																				>
+																					<TableCell>
+																						{`${
+																							academicUE
+																								.results
+																								.result
+																						} / ${
+																							academicUE
+																								.results
+																								.period *
+																							10
+																						}`}
+																					</TableCell>
+																					<TableCell>
+																						<Badge
+																							className={
+																								academicUE
+																									.results
+																									.approved
+																									? "bg-green-500"
+																									: "bg-red-500"
+																							}
+																						>
+																							{academicUE
+																								.results
+																								.approved
+																								? "Oui"
+																								: "Non"}
+																						</Badge>
+																					</TableCell>
+																					<TableCell>
+																						{academicUE
+																							.results
+																							.isExempt
+																							? "Oui"
+																							: "Non"}
+																					</TableCell>
+																					<TableCell>
+																						{
+																							academicUE
+																								.results
+																								.period
+																						}
+																					</TableCell>
+																					<TableCell>
+																						<Badge
+																							className={
+																								academicUE
+																									.results
+																									.success
+																									? "bg-green-500"
+																									: "bg-red-500"
+																							}
+																						>
+																							{academicUE
+																								.results
+																								.success
+																								? "Oui"
+																								: "Non"}
+																						</Badge>
+																					</TableCell>
+																				</TableRow>
+																			) : (
+																				<TableRow>
+																					<TableCell
+																						colSpan={
+																							5
+																						}
+																						className="text-center text-muted-foreground"
+																					>
+																						Aucun
+																						résultat
+																						disponible
+																						pour
+																						le
+																						moment
+																					</TableCell>
+																				</TableRow>
+																			)}
+																		</TableBody>
+																	</Table>
+																</ScrollArea>
+															</DialogContent>
+														</Dialog>
+													</div>
 												</div>
-											</div>
-										</CardHeader>
-										<CardContent>
-											<div className="space-y-2">
-												<p className="text-sm text-muted-foreground">
-													Du{" "}
-													{new Date(
-														academicUE.start_date
-													).toLocaleDateString()}{" "}
-													au{" "}
-													{new Date(
-														academicUE.end_date
-													).toLocaleDateString()}
-												</p>
-												<p className="text-sm text-muted-foreground">
-													Professeur:{" "}
-													{
-														academicUE.professor
-															.contactDetails
-															.firstName
-													}{" "}
-													{
-														academicUE.professor
-															.contactDetails
-															.lastName
-													}
-												</p>
-												<p className="text-sm text-muted-foreground">
-													Description:{" "}
-													{academicUE.ue.description}
-												</p>
-											</div>
-										</CardContent>
-									</Card>
-								))}
+											</CardHeader>
+											<CardContent>
+												<div className="space-y-2">
+													<p className="text-sm text-muted-foreground">
+														Du{" "}
+														{new Date(
+															academicUE.start_date
+														).toLocaleDateString()}{" "}
+														au{" "}
+														{new Date(
+															academicUE.end_date
+														).toLocaleDateString()}
+													</p>
+													<p className="text-sm text-muted-foreground">
+														Professeur:{" "}
+														{
+															academicUE.professor
+																.contactDetails
+																.firstName
+														}{" "}
+														{
+															academicUE.professor
+																.contactDetails
+																.lastName
+														}
+													</p>
+													<p className="text-sm text-muted-foreground">
+														Description:{" "}
+														{
+															academicUE.ue
+																.description
+														}
+													</p>
+												</div>
+											</CardContent>
+										</Card>
+									);
+								})}
 							</div>
 						</div>
 					))}
