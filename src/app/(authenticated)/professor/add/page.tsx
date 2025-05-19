@@ -36,7 +36,6 @@ type FormData = {
 
 export default function AddStudentForm() {
   const onSubmit = (data: FormData) => {
-    console.log("Données soumises :", data);
   };
 
   return (

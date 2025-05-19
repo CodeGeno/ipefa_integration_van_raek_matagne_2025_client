@@ -29,7 +29,6 @@ export default function StudentOverview({
 
   const getStudents = async () => {
     const response = await getPaginated<Student[]>(url);
-    console.log(response);
     if (response.success) {
       setStudentsData(response);
     }

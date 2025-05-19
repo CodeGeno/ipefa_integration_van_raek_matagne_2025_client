@@ -40,10 +40,6 @@ export function StudentResultsModal({
 
   const fetchResults = async () => {
     try {
-      console.log("Début de fetchResults");
-      console.log("Props reçues:", { academicUEId, studentId, ue });
-      console.log("AccountData:", accountData);
-
       setIsLoading(true);
       setError(null);
 
@@ -51,30 +47,23 @@ export function StudentResultsModal({
       const currentStudentId =
         accountData.role === "STUDENT" ? accountData.account?.id : studentId;
 
-      console.log("ID de l'étudiant utilisé:", currentStudentId);
-
       if (!currentStudentId) {
         throw new Error("ID de l'étudiant non trouvé");
       }
 
       // Utiliser le nouvel endpoint
       const url = `/ue-management/results/${academicUEId}/${currentStudentId}/`;
-      console.log("URL de la requête:", url);
 
       const response = await get<ApiResponse<Result[]>>(url);
-      console.log("Réponse de l'API:", response);
 
       if (response.success && response.data) {
-        console.log("Données reçues:", response.data);
         setResults(response.data as unknown as Result[]);
       } else {
-        console.error("Erreur dans la réponse:", response.message);
         throw new Error(
           response.message || "Erreur lors du chargement des résultats"
         );
       }
     } catch (error) {
-      console.error("Erreur complète:", error);
       setError("Erreur lors du chargement des résultats");
     } finally {
       setIsLoading(false);
@@ -86,14 +75,10 @@ export function StudentResultsModal({
     currentApproved: boolean
   ) => {
     try {
-      console.log("Début de handleApproveResult");
-      console.log("Paramètres:", { resultId, currentApproved });
-
       setError(null);
       const response = await patch(`/ue-management/results/${resultId}/`, {
         approved: !currentApproved,
       });
-      console.log("Réponse de l'approbation:", response);
 
       if (response.success) {
         fetchResults();
@@ -103,14 +88,11 @@ export function StudentResultsModal({
         );
       }
     } catch (error) {
-      console.error("Erreur lors de l'approbation:", error);
       setError("Erreur lors de la mise à jour du statut d'approbation");
     }
   };
 
   useEffect(() => {
-    console.log("useEffect déclenché");
-    console.log("État du modal:", isOpen);
     if (isOpen) {
       fetchResults();
     }

@@ -301,17 +301,12 @@ const StudentDetailsPage = () => {
                         return `${latestResult.result}/${totalPoints}`;
                       };
 
-                      // Vérifier si l'étudiant est dans la liste des étudiants de l'UE
-                      const isStudentEnrolled = ue.students?.some(
-                        (student) => student.id === id
-                      );
-
                       return (
                         <TableRow key={ue.id}>
                           <TableCell className="font-medium">
                             {ue.ue.name}
                           </TableCell>
-                          <TableCell>{ue.cycleYear}</TableCell>
+                          <TableCell>{ue.year}</TableCell>
                           <TableCell>
                             {ue.professor
                               ? `${ue.professor.contactDetails.firstName} ${ue.professor.contactDetails.lastName}`

@@ -319,7 +319,7 @@ export default function LessonsPage() {
                 Retour à la liste des UE
               </Button>
             </Link>
-            <div className="flex justify-between items-center">
+            <div className="flex gap-4 items-center">
               <CardTitle>Détails des leçons</CardTitle>
               <Button
                 onClick={() => {

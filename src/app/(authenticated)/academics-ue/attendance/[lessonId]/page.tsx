@@ -142,8 +142,6 @@ const ManageAttendancePage = () => {
       const response = await get<AttendanceData>(
         `/attendance/details/${lessonId}/`
       );
-      console.log("Response data:", response.data);
-      console.log("Lesson status:", response.data?.lesson?.status);
 
       if (response.success && response.data) {
         setAttendanceData(response.data);
@@ -152,12 +150,6 @@ const ManageAttendancePage = () => {
           (student) => {
             const existingAttendance = response.data?.attendances?.find(
               (att) => att.student === Number(student.id)
-            );
-            console.log(
-              "Student:",
-              student.id,
-              "Existing attendance:",
-              existingAttendance
             );
 
             const attendance: Attendance = existingAttendance
@@ -173,22 +165,15 @@ const ManageAttendancePage = () => {
                   lesson_id: Number(lessonId),
                   student_id: Number(student.id),
                 };
-            console.log(
-              "Final attendance for student:",
-              student.id,
-              attendance
-            );
             return attendance;
           }
         );
-        console.log("Initial attendance array:", initialAttendance);
         setAttendance(initialAttendance);
         setIsLoading(false);
       } else {
         toast.error("Erreur lors du chargement des données");
       }
     } catch (error) {
-      console.error("Erreur lors du chargement des données:", error);
       toast.error("Erreur lors du chargement des données");
     }
   };
@@ -200,7 +185,6 @@ const ManageAttendancePage = () => {
   }, [lessonId]);
 
   const handleAttendanceChange = (studentId: number, status: string) => {
-    console.log("Changing attendance:", { studentId, status });
     const statusKey = Object.entries(AttendanceStatusEnum).find(
       ([_, value]) => value === status
     )?.[0] as keyof typeof AttendanceStatusEnum;
@@ -208,7 +192,6 @@ const ManageAttendancePage = () => {
       const newAttendance = prev.map((att) =>
         att.student_id === studentId ? { ...att, status: statusKey } : att
       );
-      console.log("New attendance state:", newAttendance);
       return newAttendance;
     });
   };
@@ -217,19 +200,12 @@ const ManageAttendancePage = () => {
     if (!attendanceData?.students.length) return false;
 
     const isValid = attendance.every((att) => {
-      console.log("Checking attendance:", {
-        studentId: att.student_id,
-        status: att.status,
-        isEmpty: att.status === "",
-        isValidKey: Object.keys(AttendanceStatusEnum).includes(att.status),
-      });
       return (
         att.status !== "" &&
         Object.keys(AttendanceStatusEnum).includes(att.status)
       );
     });
 
-    console.log("Form validation result:", isValid);
     return isValid;
   };
 

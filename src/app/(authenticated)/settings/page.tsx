@@ -12,8 +12,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Settings } from "lucide-react";
-import Link from "next/link";
+import { Settings } from "lucide-react";
+import { post } from "@/app/fetch";
 
 export default function SettingsPage() {
   const [oldPassword, setOldPassword] = useState("");
@@ -28,28 +28,39 @@ export default function SettingsPage() {
     if (newPassword !== confirmPassword) {
       toast({
         title: "Erreur",
-        description: "Les mots de passe ne correspondent pas.",
+        description: "Les mots de passe ne correspondent pas",
         variant: "destructive",
       });
       return;
     }
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast({
+        title: "Erreur",
+        description: "Vous n'êtes pas connecté. Veuillez vous reconnecter.",
+        variant: "destructive",
+      });
+      router.push("/login");
+      return;
+    }
+
     try {
-      const response = await fetch("/api/security/change-password/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          old_password: oldPassword,
-          new_password: newPassword,
-        }),
+      const response = await post("/security/change-password/", {
+        old_password: oldPassword,
+        new_password: newPassword,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Une erreur est survenue");
+      if (!response.success) {
+        if (response.message === "Token manquant") {
+          toast({
+            title: "Erreur",
+            description: "Session expirée. Veuillez vous reconnecter.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw new Error(response.message || "Une erreur est survenue");
       }
 
       toast({

@@ -30,7 +30,6 @@ export function AddResultModal({
   onClose,
   academicUEId,
   studentId,
-  maxPeriod,
   onSuccess,
   editingResult,
   ue,
@@ -44,6 +43,9 @@ export function AddResultModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const maxScore = ue.periods * 10;
+  const minScore = maxScore / 2;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -52,20 +54,18 @@ export function AddResultModal({
     try {
       const resultData = {
         result: isExempt ? null : parseFloat(result),
-        period: editingResult?.period || 1,
-        success: isExempt
-          ? true
-          : parseFloat(result) >= ue.minimum_success_score,
-        isExempt,
-        approved: false,
+        period: ue.periods,
+        success: isExempt ? true : parseFloat(result) >= minScore,
+        isexempt: isExempt,
       };
 
       const response = editingResult
         ? await patch(`/ue-management/results/${editingResult.id}/`, resultData)
-        : await post(
-            `/ue-management/results/${academicUEId}/${studentId}/`,
-            resultData
-          );
+        : await post(`/ue-management/results/`, {
+            ...resultData,
+            academicsueId: parseInt(academicUEId),
+            studentid: parseInt(studentId),
+          });
 
       if (response.success) {
         onSuccess();
@@ -74,8 +74,7 @@ export function AddResultModal({
           response.message || "Erreur lors de l'ajout du résultat"
         );
       }
-    } catch (error) {
-      console.error("Failed to submit result:", error);
+    } catch {
       setError("Erreur lors de l'ajout du résultat");
     } finally {
       setIsLoading(false);
@@ -104,13 +103,16 @@ export function AddResultModal({
               id="result"
               type="number"
               step="0.01"
-              min="0"
-              max="20"
+              min={maxScore / 2}
+              max={maxScore}
               value={result}
               onChange={(e) => setResult(e.target.value)}
               disabled={isExempt}
               required={!isExempt}
             />
+            <p className="text-sm text-gray-500">
+              Score minimum requis pour réussir : {minScore}/{maxScore}
+            </p>
           </div>
 
           <div className="flex items-center space-x-2">
