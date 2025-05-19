@@ -60,7 +60,6 @@ const SectionRegistrationPage = () => {
   const fetchSections = async () => {
     const response = await get<Section[]>("/section/list/");
     if (response.success && response.data) {
-      console.log(response.data);
       setSections(response.data);
     }
   };
@@ -79,7 +78,6 @@ const SectionRegistrationPage = () => {
         sectionId: values.sectionId,
         cycle: parseInt(values.cycle),
       });
-      console.log(response);
       if (response.success) {
         toast({
           title: "Inscription réussie",

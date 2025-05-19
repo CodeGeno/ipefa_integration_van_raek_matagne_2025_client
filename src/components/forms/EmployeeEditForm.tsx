@@ -46,7 +46,6 @@ export const EmployeeEditForm: React.FC<{
 
   useEffect(() => {
     if (Object.keys(form.formState.errors).length > 0) {
-      console.log("Erreurs de validation:", form.formState.errors);
     }
   }, [form]);
 
@@ -68,7 +67,6 @@ export const EmployeeEditForm: React.FC<{
       );
 
       const result = await response;
-      console.log("Résultat:", result);
 
       toast({
         title: "Succès",

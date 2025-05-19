@@ -201,7 +201,6 @@ export default function DashboardPage() {
 
         if (userRole === AccountRoleEnum.STUDENT) {
           const url = `${BASE_URL}/ue-management/academic-ues/student/${accountId}/`;
-          console.log("Tentative de requête vers:", url);
 
           const response = await fetch(url, {
             method: "GET",
@@ -213,7 +212,6 @@ export default function DashboardPage() {
           });
 
           const responseText = await response.text();
-          console.log("Réponse brute:", responseText);
 
           if (!response.ok) {
             console.error("Erreur de la requête:", {
@@ -229,7 +227,6 @@ export default function DashboardPage() {
           let data;
           try {
             data = JSON.parse(responseText);
-            console.log("Données parsées:", data);
           } catch (e) {
             console.error(
               "Erreur lors du parsing de la réponse:",

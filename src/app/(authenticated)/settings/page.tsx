@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { ArrowLeft, Settings } from "lucide-react";
 import Link from "next/link";
+import { BASE_URL } from "@/lib/url";
 
 export default function SettingsPage() {
   const [oldPassword, setOldPassword] = useState("");
@@ -28,18 +29,29 @@ export default function SettingsPage() {
     if (newPassword !== confirmPassword) {
       toast({
         title: "Erreur",
-        description: "Les mots de passe ne correspondent pas.",
+        description: "Les mots de passe ne correspondent pas",
         variant: "destructive",
       });
       return;
     }
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast({
+        title: "Erreur",
+        description: "Vous n'êtes pas connecté. Veuillez vous reconnecter.",
+        variant: "destructive",
+      });
+      router.push("/login");
+      return;
+    }
+
     try {
-      const response = await fetch("/api/security/change-password/", {
+      const response = await fetch(`${BASE_URL}/security/change-password/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           old_password: oldPassword,

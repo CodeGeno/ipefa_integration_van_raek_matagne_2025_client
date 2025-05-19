@@ -86,9 +86,6 @@ export default function EditAcademicUEPage({
 
     const fetchData = async () => {
       try {
-        console.log(
-          `Fetching academic UE details from: /ue-management/academic-ues/${resolvedParams.id}/`
-        );
         // Try the first endpoint (AcademicUEDetailView)
         let academicUEResponse = await get<AcademicUE>(
           `/ue-management/academic-ues/${resolvedParams.id}/`
@@ -96,9 +93,6 @@ export default function EditAcademicUEPage({
 
         // If the first endpoint fails, try the alternative endpoint
         if (!academicUEResponse.success || !academicUEResponse.data) {
-          console.log(
-            `First endpoint failed, trying alternative: /ue-management/academic-ues/${resolvedParams.id}/details/`
-          );
           academicUEResponse = await get<AcademicUE>(
             `/ue-management/academic-ues/${resolvedParams.id}/details/`
           );
@@ -130,7 +124,6 @@ export default function EditAcademicUEPage({
         }
         setProfessors(professorsResponse.data);
       } catch (error) {
-        console.error("Error fetching data:", error);
         toast.error("Erreur", {
           description:
             "Impossible de récupérer les données. Veuillez réessayer.",
@@ -157,18 +150,14 @@ export default function EditAcademicUEPage({
             : null,
       };
 
-      console.log("Envoi des données:", updateData);
-
       // Send the update request using the AcademicUEDetailView endpoint
       const response = await patch(
         `/ue-management/academic-ues/${academicUE.id}/`,
         updateData
       );
 
-      console.log("Réponse reçue:", response);
-
       if (response.success) {
-        // Message personnalisé en fonction de l'action effectuée
+        
         let successMessage = "";
 
         if (selectedProfessorId === "none") {
@@ -200,7 +189,6 @@ export default function EditAcademicUEPage({
         );
       }
     } catch (error) {
-      console.error("Error updating academic UE:", error);
       toast.error("Erreur", {
         description:
           "Impossible de mettre à jour le professeur. Veuillez réessayer.",
