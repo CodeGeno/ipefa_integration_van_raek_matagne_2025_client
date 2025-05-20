@@ -73,6 +73,11 @@ export default function SettingsPage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (error) {
+      if (error instanceof Error && error.message === "Token non trouvé") {
+        router.push("/login");
+        return;
+      }
+
       toast({
         title: "Erreur",
         description:

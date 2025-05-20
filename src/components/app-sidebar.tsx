@@ -157,6 +157,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ],
       },
       {
+        title: "Gestion des utilisateurs",
+        url: "#",
+        icon: <Users className="size-4" />,
+        items: [
+          {
+            title: "Étudiants",
+            url: "/student/list",
+            icon: <GraduationCap className="size-4" />,
+          },
+        ],
+      },
+      {
         title: "Paramètres",
         url: "/settings",
         icon: <Settings className="size-4" />,

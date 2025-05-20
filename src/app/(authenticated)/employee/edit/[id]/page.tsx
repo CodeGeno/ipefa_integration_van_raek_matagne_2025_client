@@ -2,7 +2,7 @@ import EmployeeForm from "../employee-form";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "sonner";
 
 const EmployeeEditPage = async ({ params }: { params: { id: string } }) => {
   const { id } = await params;

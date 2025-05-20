@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { patch } from "@/app/fetch";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Employee } from "@/model/entity/lessons/employee.entity";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, Loader2, Shield } from "lucide-react";
@@ -68,21 +68,25 @@ export const EmployeeEditForm: React.FC<{
 
       const result = await response;
 
-      toast({
-        title: "Succès",
-        description: "Le compte employé a été modifié avec succès",
+      // Attendre un peu pour s'assurer que tout est bien terminé
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Afficher le toast de succès
+      toast.success("Employé modifié avec succès", {
+        description: `Les modifications de l'employé ont été enregistrées. Vous allez être redirigé...`,
+        duration: 3000,
+        icon: <BadgeCheck className="h-5 w-5 text-green-500" />,
       });
-      setTimeout(() => {
-        router.push("/employee/list");
-      }, 1500);
+
+      // Attendre que le toast soit visible avant de rediriger
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      router.push("/employee/list");
     } catch (error) {
-      toast({
-        title: "Erreur",
+      setIsSubmitting(false);
+      toast.error("Erreur lors de la modification", {
         description:
-          error instanceof Error
-            ? error.message
-            : "Une erreur est survenue lors de la modification du compte",
-        variant: "destructive",
+          "Une erreur est survenue lors de la modification de l'employé. Veuillez réessayer.",
+        duration: 5000,
       });
     } finally {
       setIsSubmitting(false);
