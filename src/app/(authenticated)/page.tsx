@@ -214,7 +214,6 @@ export default function DashboardPage() {
             return;
           }
           if (response.data && response.success) {
-            console.log(response.data);
             setAcademicUEs(response.data);
           }
         }
@@ -301,7 +300,6 @@ export default function DashboardPage() {
               <h2 className="text-xl font-semibold mb-4">Année {year}</h2>
               <div className="space-y-4">
                 {ues.map((academicUE) => {
-                  console.log(academicUE);
                   return (
                     <Card key={academicUE.id}>
                       <CardHeader>

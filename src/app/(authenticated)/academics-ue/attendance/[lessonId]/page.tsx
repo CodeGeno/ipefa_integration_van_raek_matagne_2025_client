@@ -55,27 +55,27 @@ interface Attendance {
 }
 
 const getAvailableStatuses = (role: keyof typeof AccountRoleEnum) => {
-	if (
-		AccountRoleEnum[role] === AccountRoleEnum.EDUCATOR ||
-		AccountRoleEnum[role] === AccountRoleEnum.ADMINISTRATOR
-	) {
-		return {
-			[AttendanceStatusEnum.P]: "Présentiel (P)",
-			[AttendanceStatusEnum.M]: "Distanciel (M)",
-			[AttendanceStatusEnum.CM]: "Certificat médical (CM)",
-			[AttendanceStatusEnum.A]: "Absence non justifiée (A)",
-			[AttendanceStatusEnum.ABANDON]: "Abandon (ABANDON)",
-			[AttendanceStatusEnum.D]: "Dispensé (D)",
-		};
-	}
-	if (AccountRoleEnum[role] === AccountRoleEnum.PROFESSOR) {
-		return {
-			[AttendanceStatusEnum.P]: "Présentiel (P)",
-			[AttendanceStatusEnum.M]: "Distanciel (M)",
-			[AttendanceStatusEnum.A]: "Absence non justifiée (A)",
-		};
-	}
-	return {};
+  if (
+    AccountRoleEnum[role] === AccountRoleEnum.EDUCATOR ||
+    AccountRoleEnum[role] === AccountRoleEnum.ADMINISTRATOR
+  ) {
+    return {
+      [AttendanceStatusEnum.P]: "Présentiel (P)",
+      [AttendanceStatusEnum.M]: "Distanciel (M)",
+      [AttendanceStatusEnum.CM]: "Certificat médical (CM)",
+      [AttendanceStatusEnum.A]: "Absence non justifiée (A)",
+      [AttendanceStatusEnum.ABANDON]: "Abandon (ABANDON)",
+      [AttendanceStatusEnum.D]: "Dispensé (D)",
+    };
+  }
+  if (AccountRoleEnum[role] === AccountRoleEnum.PROFESSOR) {
+    return {
+      [AttendanceStatusEnum.P]: "Présentiel (P)",
+      [AttendanceStatusEnum.M]: "Distanciel (M)",
+      [AttendanceStatusEnum.A]: "Absence non justifiée (A)",
+    };
+  }
+  return {};
 };
 
 const getLessonStatusColorClass = (
@@ -96,12 +96,12 @@ const getLessonStatusColorClass = (
 };
 
 const ManageAttendancePage = () => {
-	const { accountData } = useContext(AccountContext);
-	const [attendanceData, setAttendanceData] = useState<AttendanceData>();
-	const [attendance, setAttendance] = useState<Attendance[]>([]);
-	const { lessonId } = useParams();
-	const [isLoading, setIsLoading] = useState(true);
-	const router = useRouter();
+  const { accountData } = useContext(AccountContext);
+  const [attendanceData, setAttendanceData] = useState<AttendanceData>();
+  const [attendance, setAttendance] = useState<Attendance[]>([]);
+  const { lessonId } = useParams();
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   const fetchLessonData = async () => {
     try {
@@ -181,25 +181,25 @@ const ManageAttendancePage = () => {
       return;
     }
 
-		try {
-			console.log("Présences soumises:", attendance);
-			const response = await post(`/attendance/upsert/`, attendance);
-			if (response.success) {
-				toast.success("Présences enregistrées avec succès");
-				// Redirection vers la liste des leçons
-				if (attendanceData?.lesson.academic_ue.id) {
-					router.push(
-						`/academics-ue/lessons/${attendanceData.lesson.academic_ue.id}`
-					);
-				}
-			} else {
-				toast.error("Erreur lors de l'enregistrement des présences");
-			}
-		} catch (error) {
-			console.error("Erreur lors de la soumission:", error);
-			toast.error("Erreur lors de l'enregistrement des présences");
-		}
-	};
+    try {
+      console.log("Présences soumises:", attendance);
+      const response = await post(`/attendance/upsert/`, attendance);
+      if (response.success) {
+        toast.success("Présences enregistrées avec succès");
+        // Redirection vers la liste des leçons
+        if (attendanceData?.lesson.academic_ue.id) {
+          router.push(
+            `/academics-ue/lessons/${attendanceData.lesson.academic_ue.id}`
+          );
+        }
+      } else {
+        toast.error("Erreur lors de l'enregistrement des présences");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la soumission:", error);
+      toast.error("Erreur lors de l'enregistrement des présences");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -209,216 +209,176 @@ const ManageAttendancePage = () => {
     );
   }
 
-	return (
-		<div className="container mx-auto py-8 px-4">
-			<Card className="shadow-lg">
-				<CardHeader className="bg-muted/50 border-b">
-					<div className="flex flex-col space-y-4">
-						<div className="flex justify-between items-center">
-							<div className="flex items-center space-x-4">
-								<Link
-									href={`/academics-ue/lessons/${attendanceData?.lesson.academic_ue.id}`}
-									className="text-muted-foreground hover:text-primary"
-								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										width="24"
-										height="24"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="2"
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										className="h-6 w-6"
-									>
-										<path d="m15 18-6-6 6-6" />
-									</svg>
-								</Link>
-								<CardTitle className="text-2xl font-bold">
-									Gestion des présences
-								</CardTitle>
-							</div>
-							{attendanceData && (
-								<div className="flex items-center space-x-2">
-									<span className="text-sm font-medium text-muted-foreground">
-										Statut du cours:
-									</span>
-									<span
-										className={cn(
-											"px-3 py-1 rounded-full text-sm font-medium",
-											getLessonStatusColorClass(
-												attendanceData.lesson
-													.status as unknown as keyof typeof LessonStatus
-											)
-										)}
-									>
-										{(() => {
-											return LessonStatus[
-												attendanceData.lesson
-													.status as unknown as keyof typeof LessonStatus
-											];
-										})()}
-									</span>
-								</div>
-							)}
-						</div>
-						{attendanceData && (
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-								<div className="flex flex-col space-y-1">
-									<span className="text-sm font-medium text-muted-foreground">
-										Cours
-									</span>
-									<span className="text-base font-semibold">
-										{attendanceData.ue.name}
-									</span>
-								</div>
-								<div className="flex flex-col space-y-1">
-									<span className="text-sm font-medium text-muted-foreground">
-										Professeur
-									</span>
-									<span className="text-base font-semibold">
-										{`${attendanceData.professor.contactDetails.firstName} ${attendanceData.professor.contactDetails.lastName}`}
-									</span>
-								</div>
-								<div className="flex flex-col space-y-1">
-									<span className="text-sm font-medium text-muted-foreground">
-										Date
-									</span>
-									<span className="text-base font-semibold">
-										{new Date(
-											attendanceData.lesson.lesson_date
-										).toLocaleDateString()}
-									</span>
-								</div>
-							</div>
-						)}
-					</div>
-				</CardHeader>
-				<CardContent className="p-6">
-					<div className="rounded-lg border shadow-sm">
-						<Table>
-							<TableHeader>
-								<TableRow className="bg-muted/50">
-									<TableHead className="font-semibold">
-										Identifiant
-									</TableHead>
-									<TableHead className="font-semibold">
-										Nom
-									</TableHead>
-									<TableHead className="font-semibold">
-										Prénom
-									</TableHead>
-									<TableHead className="font-semibold text-center">
-										Statut
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{attendanceData?.students.length === 0 ? (
-									<TableRow>
-										<TableCell
-											colSpan={4}
-											className="text-center py-8 text-muted-foreground"
-										>
-											Aucun étudiant trouvé
-										</TableCell>
-									</TableRow>
-								) : (
-									attendanceData?.students.map((student) => (
-										<TableRow
-											key={student.id}
-											className="hover:bg-muted/50"
-										>
-											<TableCell className="font-medium">
-												{student.identifier}
-											</TableCell>
-											<TableCell>
-												{
-													student.contactDetails
-														.lastName
-												}
-											</TableCell>
-											<TableCell>
-												{
-													student.contactDetails
-														.firstName
-												}
-											</TableCell>
-											<TableCell className="text-center">
-												<Select
-													value={
-														attendance.find(
-															(att) =>
-																att.student_id ===
-																Number(
-																	student.id
-																)
-														)?.status
-															? AttendanceStatusEnum[
-																	attendance.find(
-																		(att) =>
-																			att.student_id ===
-																			Number(
-																				student.id
-																			)
-																	)
-																		?.status as keyof typeof AttendanceStatusEnum
-															  ]
-															: ""
-													}
-													onValueChange={(value) =>
-														handleAttendanceChange(
-															Number(student.id),
-															value
-														)
-													}
-												>
-													<SelectTrigger className="w-[180px] mx-auto">
-														<SelectValue placeholder="Sélectionner un statut" />
-													</SelectTrigger>
-													<SelectContent>
-														{Object.entries(
-															getAvailableStatuses(
-																accountData.role as keyof typeof AccountRoleEnum
-															)
-														).map(
-															([
-																value,
-																label,
-															]) => (
-																<SelectItem
-																	key={value}
-																	value={
-																		value
-																	}
-																>
-																	{label}
-																</SelectItem>
-															)
-														)}
-													</SelectContent>
-												</Select>
-											</TableCell>
-										</TableRow>
-									))
-								)}
-							</TableBody>
-						</Table>
-					</div>
-					<div className="mt-6 flex justify-end">
-						<Button
-							onClick={handleSubmit}
-							className="px-8 py-2"
-							disabled={!isFormValid()}
-						>
-							Valider les présences
-						</Button>
-					</div>
-				</CardContent>
-			</Card>
-		</div>
-	);
+  return (
+    <div className="container mx-auto py-8 px-4">
+      <Card className="shadow-lg">
+        <CardHeader className="bg-muted/50 border-b">
+          <div className="flex flex-col space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-4">
+                <Link
+                  href={`/academics-ue/lessons/${attendanceData?.lesson.academic_ue.id}`}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-6 w-6"
+                  >
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                </Link>
+                <CardTitle className="text-2xl font-bold">
+                  Gestion des présences
+                </CardTitle>
+              </div>
+              {attendanceData && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Statut du cours:
+                  </span>
+                  <span
+                    className={cn(
+                      "px-3 py-1 rounded-full text-sm font-medium",
+                      getLessonStatusColorClass(
+                        attendanceData.lesson
+                          .status as unknown as keyof typeof LessonStatus
+                      )
+                    )}
+                  >
+                    {(() => {
+                      return LessonStatus[
+                        attendanceData.lesson
+                          .status as unknown as keyof typeof LessonStatus
+                      ];
+                    })()}
+                  </span>
+                </div>
+              )}
+            </div>
+            {attendanceData && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Cours
+                  </span>
+                  <span className="text-base font-semibold">
+                    {attendanceData.ue.name}
+                  </span>
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Professeur
+                  </span>
+                  <span className="text-base font-semibold">
+                    {`${attendanceData.professor.contactDetails.firstName} ${attendanceData.professor.contactDetails.lastName}`}
+                  </span>
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Date
+                  </span>
+                  <span className="text-base font-semibold">
+                    {new Date(
+                      attendanceData.lesson.lesson_date
+                    ).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="rounded-lg border shadow-sm">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="font-semibold">Identifiant</TableHead>
+                  <TableHead className="font-semibold">Nom</TableHead>
+                  <TableHead className="font-semibold">Prénom</TableHead>
+                  <TableHead className="font-semibold text-center">
+                    Statut
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {attendanceData?.students.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      Aucun étudiant trouvé
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  attendanceData?.students.map((student) => (
+                    <TableRow key={student.id} className="hover:bg-muted/50">
+                      <TableCell className="font-medium">
+                        {student.identifier}
+                      </TableCell>
+                      <TableCell>{student.contactDetails.lastName}</TableCell>
+                      <TableCell>{student.contactDetails.firstName}</TableCell>
+                      <TableCell className="text-center">
+                        <Select
+                          value={
+                            attendance.find(
+                              (att) => att.student_id === Number(student.id)
+                            )?.status
+                              ? AttendanceStatusEnum[
+                                  attendance.find(
+                                    (att) =>
+                                      att.student_id === Number(student.id)
+                                  )?.status as keyof typeof AttendanceStatusEnum
+                                ]
+                              : ""
+                          }
+                          onValueChange={(value) =>
+                            handleAttendanceChange(Number(student.id), value)
+                          }
+                        >
+                          <SelectTrigger className="w-[180px] mx-auto">
+                            <SelectValue placeholder="Sélectionner un statut" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(
+                              getAvailableStatuses(
+                                accountData.role as keyof typeof AccountRoleEnum
+                              )
+                            ).map(([value, label]) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="mt-6 flex justify-end">
+            <Button
+              onClick={handleSubmit}
+              className="px-8 py-2"
+              disabled={!isFormValid()}
+            >
+              Valider les présences
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
 
 export default ManageAttendancePage;

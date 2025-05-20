@@ -13,7 +13,6 @@ const DisplaySectionRegistration = () => {
   const getSections = async () => {
     const response = await get<Section[]>(`/section/list/`);
     if (response.success && response.data) {
-      console.log(response.data);
       setSections(response.data);
     }
   };
