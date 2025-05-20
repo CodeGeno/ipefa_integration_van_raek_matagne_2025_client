@@ -54,19 +54,6 @@ interface Attendance {
   student_id: number;
 }
 
-const attendanceStatusMap = Object.fromEntries(
-  Object.entries(AttendanceStatusEnum).map(([key, value]) => [value, key])
-);
-
-const getStatusKey = (
-  value: string
-): keyof typeof AttendanceStatusEnum | "" => {
-  const entry = Object.entries(AttendanceStatusEnum).find(
-    ([_, v]) => v === value
-  );
-  return entry ? (entry[0] as keyof typeof AttendanceStatusEnum) : "";
-};
-
 const getAvailableStatuses = (role: keyof typeof AccountRoleEnum) => {
 	if (
 		AccountRoleEnum[role] === AccountRoleEnum.EDUCATOR ||
@@ -89,27 +76,6 @@ const getAvailableStatuses = (role: keyof typeof AccountRoleEnum) => {
 		};
 	}
 	return {};
-};
-
-const getStatusColorClass = (
-  status: keyof typeof AttendanceStatusEnum
-): string => {
-  switch (status) {
-    case "P":
-      return "bg-green-100 text-green-800";
-    case "M":
-      return "bg-blue-100 text-blue-800";
-    case "CM":
-      return "bg-yellow-100 text-yellow-800";
-    case "A":
-      return "bg-red-100 text-red-800";
-    case "ABANDON":
-      return "bg-red-500 text-white";
-    case "D":
-      return "bg-purple-100 text-purple-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
 };
 
 const getLessonStatusColorClass = (

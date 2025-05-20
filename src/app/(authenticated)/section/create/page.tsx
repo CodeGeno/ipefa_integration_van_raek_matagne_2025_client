@@ -28,7 +28,7 @@ import { post } from "@/app/fetch";
 import { sectionSchema, SectionFormData } from "@/model/schema/section.schema";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Save, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Save, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 
 const SectionCreatePage = () => {

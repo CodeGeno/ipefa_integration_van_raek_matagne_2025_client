@@ -12,9 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Section } from "@/model/entity/ue/section.entity";
-import DisplaySectionRegistration from "../section-registration";
 import {
   ArrowLeft,
   User,
@@ -22,9 +19,7 @@ import {
   Phone,
   Hash,
   MapPin,
-  GraduationCap,
   BookOpen,
-  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import { AcademicUE } from "@/model/entity/ue/academic-ue.entity";

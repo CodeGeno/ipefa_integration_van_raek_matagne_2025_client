@@ -39,15 +39,6 @@ import { createUrlWithParams } from "@/utils/url";
 import { get } from "@/app/fetch";
 import { AccountContext } from "@/app/context";
 
-interface ApiSectionItem {
-	id: number;
-	sectionId: number;
-	name: string;
-	sectionType: string;
-	sectionCategory: string;
-	description: string;
-}
-
 async function getSections(): Promise<Section[]> {
 	try {
 		const response = await get<Section[]>("/section/list/");

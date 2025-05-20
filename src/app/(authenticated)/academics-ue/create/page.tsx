@@ -140,7 +140,7 @@ export default function CreateAcademicUEPage() {
     setEndDate(date);
   };
 
-  // Calculate sessions based on periods and dates
+  // Calculer les séances 
   const calculateSessions = (start: Date, end: Date, periods: number) => {
     const sessions = [];
     const numberOfSessions = Math.ceil(periods / 4);

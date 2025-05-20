@@ -20,22 +20,7 @@ import { get, post } from "@/app/fetch";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Save, X, BadgeCheck } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { ArrowLeft, Save, X, BadgeCheck } from "lucide-react";
 
 // Define schema with Zod
 const ueSchema = z.object({

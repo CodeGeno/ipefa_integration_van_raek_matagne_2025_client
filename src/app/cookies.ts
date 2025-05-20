@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { getCookie as getClientCookie } from "cookies-next/client";
 
 // Fonction côté serveur pour récupérer les cookies
+// Construire manuellement la chaîne de cookies
 export const getCookieString = async (): Promise<Headers> => {
   const cookieStore = await cookies();
   const headers = new Headers();
@@ -19,7 +20,6 @@ export const getCookieString = async (): Promise<Headers> => {
       headers.set("Cookie", cookieString);
     }
 
-    // Essayons de récupérer le token côté client si possible
     try {
       getClientCookie("token");
     } catch {}

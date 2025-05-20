@@ -6,14 +6,7 @@ import Link from "next/link";
 import { get, patch } from "@/app/fetch";
 import { useState, useEffect, useContext } from "react";
 import { useParams } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
-  Calendar as CalendarIcon,
-  Clock,
-} from "lucide-react";
+import { ArrowLeft, ArrowUpDown, Calendar as CalendarIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -31,8 +24,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { addDays, isBefore, startOfDay, format, parseISO } from "date-fns";
-import Head from "next/head";
+import { isBefore, startOfDay, format, parseISO } from "date-fns";
 import {
   Table,
   TableBody,
@@ -223,21 +215,6 @@ export default function LessonsPage() {
   useEffect(() => {
     getAcademicUE();
   }, [params.id]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "PROGRAMMED":
-        return "text-blue-600";
-      case "IN_PROGRESS":
-        return "text-yellow-600";
-      case "COMPLETED":
-        return "text-green-600";
-      case "CANCELLED":
-        return "text-red-600";
-      default:
-        return "text-gray-600";
-    }
-  };
 
   const sortLessons = (lessons: Lesson[]) => {
     if (!sortConfig) return lessons;

@@ -8,13 +8,7 @@ import { EmployeeEditForm } from "@/components/forms/EmployeeEditForm";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
-const EmployeeForm = ({
-  id,
-  isEditing,
-}: {
-  id: string;
-  isEditing: boolean;
-}) => {
+const EmployeeForm = ({ id }: { id: string; isEditing: boolean }) => {
   const [employee, setEmployee] = useState<Employee>();
   const [loading, setLoading] = useState<boolean>(false);
 

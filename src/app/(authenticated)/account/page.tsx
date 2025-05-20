@@ -1,7 +1,5 @@
-import { Card } from "@/components/ui";
-
 const Account = () => {
-	return;
+  return;
 };
 
-export default Account;
+export default Account;

@@ -2,7 +2,6 @@
 
 import { Button, Input } from "@/components/ui";
 import { Student } from "@/model/entity/users/student.entity";
-import { PaginationWithSearch } from "@/model/common/pagination.interface";
 import PaginationComponent from "@/components/pagination-component";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";

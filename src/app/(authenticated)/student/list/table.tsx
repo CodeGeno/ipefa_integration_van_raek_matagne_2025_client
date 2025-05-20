@@ -1,6 +1,5 @@
 "use client";
 import { Student } from "@/model/entity/users/student.entity";
-import { PaginationWithSearch } from "@/model/common/pagination.interface";
 import {
   Table,
   TableBody,
